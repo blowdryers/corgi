@@ -11,6 +11,29 @@
     <title>corgi.land</title>
 </head>
 <body style="background:black;color:white;">
-    <h1>Hello welcome to corgi.land</h1>
+
+<div style="position:fixed;top:0;right:0;">
+    <button onclick="a()">a</button>
+    <button onclick="b()">b</button>
+</div>
+<h1>Hello welcome to corgi.land</h1>
+<script>
+let i;
+function a() {
+    clearInterval(i);
+    document.body.style.background="white";
+    document.body.style.color="black";
+}
+
+function b() {
+    clearInterval(i);
+    let x = false;
+    i = setInterval(() => {
+        x = !x;
+        document.body.style.background = x ? "white" : "black";
+        document.body.style.color = x ? "black" : "white";
+    }, 500);
+}
+</script>
 </body>
 </html>
