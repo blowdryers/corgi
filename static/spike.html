@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Gallery</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    font-family: Arial;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .gallery img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: 0.2s;
+  }
+
+  .gallery img:hover {
+    transform: scale(1.05);
+  }
+
+  .fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .fullscreen img {
+    max-width: 95%;
+    max-height: 95%;
+  }
+</style>
+</head>
+<body>
+
+<div class="gallery" id="gallery"></div>
+
+<div class="fullscreen" id="fullscreen">
+  <img id="fullImg">
+</div>
+
+<script>
+const images = [
+"IMG_6214.png",
+"IMG_6223.gif",
+"IMG_6295.png",
+"IMG_6318.png",
+"IMG_6338.png",
+"IMG_6339.png",
+"IMG_6351.png",
+"IMG_6365.png",
+"IMG_6385.png",
+"IMG_6398.png",
+"IMG_6503.png",
+"IMG_6504.png",
+"IMG_6528.png",
+"IMG_6552.png",
+"IMG_6572.png",
+"IMG_6608.png",
+"IMG_6617.png",
+"IMG_6629.png",
+"IMG_6667.png",
+"Untitled2844_20260323233951.png",
+"Untitled2854_20260325202838.png",
+"Untitled2869_20260327182506.png",
+"Untitled2875_20260328020533.png",
+"Untitled2875_20260328020856.png",
+"Untitled2912_20260402203953.png"
+];
+
+const gallery = document.getElementById("gallery");
+const fullscreen = document.getElementById("fullscreen");
+const fullImg = document.getElementById("fullImg");
+
+images.forEach(src => {
+  const img = document.createElement("img");
+  img.src = src;
+
+  img.onclick = () => {
+    fullImg.src = src;
+    fullscreen.style.display = "flex";
+
+
+    if (fullscreen.requestFullscreen) {
+      fullscreen.requestFullscreen();
+    }
+  };
+
+  gallery.appendChild(img);
+});
+
+
+fullscreen.onclick = () => {
+  fullscreen.style.display = "none";
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  }
+};
+</script>
+
+</body>
+</html>
