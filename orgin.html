@@ -1,29 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>simple proxy loader</title>
+    <title>proxy loader</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 300px;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: white;
+        }
+
+        button {
+            padding: 10px 15px;
+            background: #222;
+            color: white;
+            border: 1px solid #444;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        iframe {
+            margin-top: 20px;
+            width: 100%;
+            height: 500px;
+            border: 1px solid #333;
+            background: #000;
+        }
+    </style>
 </head>
 <body>
 
 <h2>proxy site loader</h2>
 
-<input type="text" id="urlInput" placeholder="enter website url" style="width:300px;">
+<input type="text" id="urlInput" placeholder="enter website url">
 <button onclick="loadSite()">go</button>
 
-<br><br>
+<div id="status">waiting for input...</div>
 
-<iframe id="frame" style="width:100%; height:500px;"></iframe>
+<iframe id="frame"></iframe>
 
 <script>
 function loadSite() {
-    let url = document.getElementById("urlInput").value;
-    
+    let url = document.getElementById("urlInput").value.trim();
+    let status = document.getElementById("status");
+    let frame = document.getElementById("frame");
+
+    if (!url) {
+        status.innerText = "error: enter a url";
+        return;
+    }
+
     if (!url.startsWith("http")) {
         url = "http://" + url;
     }
 
     let proxy = "http://185.162.230.230:80/";
-    document.getElementById("frame").src = proxy + url;
+    let finalUrl = proxy + url;
+
+    status.innerText = "loading...";
+
+    frame.src = finalUrl;
+
+    // try to detect load success/failure
+    frame.onload = function () {
+        status.innerText = "loaded (if blank, site blocked iframe or proxy failed)";
+    };
+
+    frame.onerror = function () {
+        status.innerText = "error loading site (proxy down or blocked)";
+    };
+
+    // fallback timeout check
+    setTimeout(() => {
+        if (frame.src === finalUrl) {
+            status.innerText = "possible error: site may be blocked or proxy not working";
+        }
+    }, 5000);
 }
 </script>
 
