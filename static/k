@@ -1,0 +1,154 @@
+import turtle
+import random
+import time
+
+# Create the stage
+screen = turtle.Screen()
+screen.setup(600, 600)
+screen.bgcolor("black")
+screen.tracer(0)
+
+# Register the image files
+my_sprite = "batman.gif"
+my_sprite2 = "joker.gif"
+screen.addshape(my_sprite)
+screen.addshape(my_sprite2)
+screen.bgpic("gotham.gif")
+
+# Create the Player
+player = turtle.Turtle()
+player.shape(my_sprite)
+player.penup()
+
+# The Enemy
+enemy = turtle.Turtle()
+enemy.shape(my_sprite2)
+enemy.penup()
+enemy.goto(200, 200)
+
+# Coin
+coin = turtle.Turtle()
+coin.shape("circle")
+coin.color("yellow")
+coin.penup()
+coin.goto(-200, -200)
+
+# Scoreboard
+writer = turtle.Turtle()
+writer.hideturtle()
+writer.penup()
+writer.color("white")
+writer.goto(0, 260)
+
+# Game Settings
+score = 0
+lives = 3
+player_speed = 5
+enemy_speed = 2
+
+is_moving_up = False
+is_moving_down = False
+is_moving_left = False
+is_moving_right = False
+
+# Movement functions
+def start_up():
+    global is_moving_up
+    is_moving_up = True
+
+def start_down():
+    global is_moving_down
+    is_moving_down = True
+
+def start_left():
+    global is_moving_left
+    is_moving_left = True
+
+def start_right():
+    global is_moving_right
+    is_moving_right = True
+
+def stop_up():
+    global is_moving_up
+    is_moving_up = False
+
+def stop_down():
+    global is_moving_down
+    is_moving_down = False
+
+def stop_left():
+    global is_moving_left
+    is_moving_left = False
+
+def stop_right():
+    global is_moving_right
+    is_moving_right = False
+
+# Update scoreboard
+def update_scoreboard():
+    writer.clear()
+    writer.write(f"Score: {score} | Lives: {lives}", align="center", font=("Arial", 16, "bold"))
+
+update_scoreboard()
+
+# Controls
+screen.listen()
+screen.onkeypress(start_up, "w")
+screen.onkeypress(start_down, "s")
+screen.onkeypress(start_left, "a")
+screen.onkeypress(start_right, "d")
+
+screen.onkeyrelease(stop_up, "w")
+screen.onkeyrelease(stop_down, "s")
+screen.onkeyrelease(stop_left, "a")
+screen.onkeyrelease(stop_right, "d")
+
+# Main game loop
+while True:
+    # Player movement
+    if is_moving_up:
+        player.setheading(90)
+        player.forward(player_speed)
+    if is_moving_down:
+        player.setheading(270)
+        player.forward(player_speed)
+    if is_moving_left:
+        player.setheading(180)
+        player.forward(player_speed)
+    if is_moving_right:
+        player.setheading(0)
+        player.forward(player_speed)
+
+    # Enemy movement
+    enemy.setheading(enemy.towards(player))
+    enemy.forward(enemy_speed)
+
+    # Enemy collision
+    if player.distance(enemy) < 20:
+        lives -= 1
+        update_scoreboard()
+        if lives <= 0:
+            writer.goto(0, 0)
+            writer.write("GAME OVER", align="center", font=("Arial", 32, "bold"))
+            screen.update()
+            break
+        player.goto(0, 0)
+        enemy.goto(200, 200)
+        screen.update()
+        time.sleep(1)
+
+    # Coin collision
+    if player.distance(coin) < 25:
+        score += 1
+        update_scoreboard()
+        coin.goto(random.randint(-250, 250), random.randint(-250, 250))
+        if score >= 5:
+            writer.goto(0, 0)
+            writer.write("YOU WIN!", align="center", font=("Arial", 32, "bold"))
+            screen.update()
+            break
+
+    screen.update()
+    time.sleep(0.01)
+
+screen.mainloop()
