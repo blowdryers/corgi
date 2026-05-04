@@ -1,29 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Embedded Strawpage</title>
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intro Screen</title>
+<style>
     html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: black;
+        font-family: Arial, sans-serif;
+    }
+
+    #overlay {
+        position: fixed;
+        inset: 0;
+        background: black;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 10;
+        user-select: none;
     }
 
     iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: none;
     }
-  </style>
+</style>
 </head>
 <body>
-  <iframe
-    src="https://csharp.straw.page"
-    title="SNAKESNAKESNAKESNAKESNAKESNAKE"
-    allowfullscreen>
-  </iframe>
+
+<div id="overlay">press anywhere</div>
+
+<audio id="introAudio" src="Woof Woof [noRkcjFUyn0].mp3"></audio>
+
+<iframe id="siteFrame" src="https://csharp.straw.page"></iframe>
+
+<script>
+const overlay = document.getElementById("overlay");
+const audio = document.getElementById("introAudio");
+const frame = document.getElementById("siteFrame");
+
+overlay.addEventListener("click", async () => {
+    try {
+        await audio.play();
+    } catch (err) {
+        console.log("Audio blocked:", err);
+    }
+
+    overlay.style.display = "none";
+    frame.style.display = "block";
+});
+</script>
+
 </body>
 </html>
