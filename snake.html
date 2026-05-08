@@ -9,7 +9,7 @@
         margin: 0;
         width: 100%;
         height: 100%;
-        overflow: hidden;
+        overflow: auto; /* allow scrolling */
         background: black;
         font-family: Arial, sans-serif;
     }
@@ -42,9 +42,11 @@
 
     iframe {
         width: 100%;
-        height: 100%;
+        height: 100vh; /* better for mobile */
         border: none;
         display: none;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
     }
 </style>
 </head>
@@ -52,7 +54,7 @@
 
 <div id="overlay"><span>press anywhere (this site is broken)</span></div>
 
-<audio id="introAudio" src="Woof Woof [noRkcjFUyn0].mp3"></audio>
+<audio id="introAudio" src="Zombo.com.mp3"></audio>
 
 <iframe id="siteFrame" src="https://csharp.straw.page"></iframe>
 
@@ -82,4 +84,4 @@ overlay.addEventListener("pointerdown", startSite);
 </script>
 
 </body>
-</html></html>
+</html>
