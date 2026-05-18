@@ -1,0 +1,7 @@
+taskkill /F /IM AristotleK12_Filter.exe
+taskkill /F /IM AristotleK12CL.exe
+taskkill /F /IM AristotleK12_BC.exe
+taskkill /F /IM student.exe
+taskkill /F /IM TouchpointAnalyticsClient.exe
+taskkill /F /IM momsmartclnt.exe
+taskkill /F /IM SDClientService.exe
