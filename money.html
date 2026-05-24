@@ -5,121 +5,293 @@
 <title>💰 TOTALLY LEGIT MONEY SITE 💰</title>
 
 <style>
-  body {
-    background: black;
-    color: lime;
-    font-family: Comic Sans MS, cursive;
-    text-align: center;
-    overflow-x: hidden;
-  }
+body {
+  background: black;
+  color: lime;
+  font-family: Comic Sans MS, cursive;
+  text-align: center;
+  overflow-x: hidden;
+  cursor: none;
+}
 
-  h1 {
-    font-size: 60px;
-    animation: flash 0.5s infinite;
-  }
+/* flashing title */
+h1 {
+  font-size: 60px;
+  animation: flash 0.4s infinite;
+}
+@keyframes flash {
+  0% { color: red; }
+  50% { color: yellow; }
+  100% { color: lime; }
+}
 
-  @keyframes flash {
-    0% { color: red; }
-    50% { color: yellow; }
-    100% { color: lime; }
-  }
+.warning {
+  background: red;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+}
 
-  .warning {
-    background: red;
-    color: white;
-    padding: 10px;
-    font-weight: bold;
-    font-size: 18px;
-  }
+/* banners */
+.banner-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.banner-container img {
+  width: 180px;
+  border: 3px solid yellow;
+  animation: spin linear infinite;
+}
 
-  .banner-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-  }
+/* spin animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-  .banner-container img {
-    width: 200px;
-    border: 3px solid yellow;
-    animation: spin 5s linear infinite;
-  }
+/* fake button */
+.btn {
+  font-size: 30px;
+  padding: 15px 30px;
+  background: gold;
+  color: black;
+  border: none;
+  cursor: pointer;
+  animation: bounce 0.8s infinite;
+}
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
 
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+/* popup */
+.popup {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: yellow;
+  color: black;
+  padding: 20px;
+  font-size: 22px;
+  border: 5px solid red;
+  z-index: 9999;
+  display: none;
+}
 
-  .btn {
-    margin-top: 30px;
-    font-size: 30px;
-    padding: 15px 30px;
-    background: gold;
-    color: black;
-    border: none;
-    cursor: pointer;
-    animation: bounce 0.8s infinite;
-  }
+/* fake chat */
+.chat {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 250px;
+  height: 200px;
+  background: #111;
+  color: lime;
+  overflow: hidden;
+  font-size: 12px;
+  border-top: 2px solid lime;
+}
 
-  @keyframes bounce {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0); }
-  }
-
-  marquee {
-    font-size: 24px;
-    color: cyan;
-  }
+.sparkle {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: white;
+  pointer-events: none;
+  border-radius: 50%;
+}
 </style>
 </head>
 
 <body>
 
+
+
 <h1>💰 MAKE $1,000,000 IN 5 MINUTES 💰</h1>
 
-<marquee>🔥 LIMITED TIME OFFER 🔥 CLICK NOW 🔥 DO NOT MISS OUT 🔥</marquee>
+<marquee>🔥 LIMITED TIME 🔥 TRUST ME BRO 🔥 REAL METHOD 🔥</marquee>
 
-<button class="btn" onclick="alert('LOL GET BAITED FAGGOT 😂😂😂🤣🤣🤣🤣🤣')">
-CLAIM YOUR FREE MONEY NOW
+<button class="btn" onclick="alert('😂LOL GET BAITED FAGGOT 😂🤣🤣🤣😂😂😂')">
+CLAIM MONEY NOW
 </button>
 
 <div class="banner-container" id="banners"></div>
 
+<div class="popup" id="popup">
+🎉 YOU WON $999,999 🎉<br>
+Click OK to claim!!!
+</div>
+
+<div class="chat" id="chat"></div>
+
 <script>
-  // 🔥 Automatically load all GIF banners from folder
-  async function loadBanners() {
-    try {
-      const res = await fetch('/static/banners/');
-      const text = await res.text();
+/* =========================
+   FIXED BANNER LOADING
+   ========================= */
+const banners = [
+  "file_1.gif",
+  "file_2.gif",
+  "file_3.gif",
+  "file_4.gif",
+  "file_5.gif",
+  "file_6.gif",
+  "file_7.gif",
+  "file_8.gif",
+  "file_9.gif",
+  "file_10.gif",
+  "file_11.gif",
+  "file_12.gif",
+  "file_13.gif",
+  "file_14.gif",
+  "file_15.gif",
+  "file_16.gif",
+  "file_17.gif",
+  "file_18.gif",
+  "file_19.gif",
+  "file_20.gif",
+  "file_21.gif",
+  "file_22.gif",
+  "file_23.gif",
+  "file_24.gif",
+  "file_25.gif",
+  "file_26.gif",
+  "file_27.gif",
+  "file_28.gif",
+  "file_29.gif",
+  "file_30.gif",
+  "file_31.gif",
+  "file_32.gif",
+  "file_33.gif",
+  "file_34.gif",
+  "file_35.gif",
+  "file_36.gif",
+  "file_37.gif",
+  "file_38.gif",
+  "file_39.gif",
+  "file_40.gif",
+  "file_41.gif",
+  "file_42.gif",
+  "file_43.gif",
+  "file_44.gif",
+  "file_45.gif",
+  "file_46.gif",
+  "file_47.gif",
+  "file_48.gif",
+  "file_49.gif",
+  "file_50.gif",
+  "file_51.gif",
+  "file_52.gif",
+  "file_53.gif",
+  "file_54.gif",
+  "file_55.gif",
+  "file_56.gif",
+  "file_57.gif",
+  "file_58.gif",
+  "file_59.gif",
+  "file_60.gif",
+  "file_61.gif",
+  "file_62.gif",
+  "file_63.gif",
+  "file_64.gif",
+  "file_65.gif",
+  "file_66.gif",
+  "file_67.gif",
+  "file_68.gif",
+  "file_69.gif",
+  "file_70.gif",
+  "file_71.gif",
+  "file_72.gif",
+  "file_73.gif",
+  "file_74.gif",
+  "file_75.gif",
+  "file_76.gif",
+  "file_77.gif",
+  "file_78.gif",
+  "file_79.gif",
+  "file_80.gif",
+  "file_81.gif",
+  "file_82.gif",
+  "file_83.gif",
+  "file_84.gif",
+  "file_85.gif",
+  "file_86.gif",
+  "file_87.gif",
+  "file_88.gif",
+  "file_89.gif",
+  "file_90.gif",
+  "file_91.gif",
+  "file_92.gif",
+  "file_93.gif",
+  "file_94.gif",
+  "file_95.gif",
+  "file_96.gif",
+  "file_97.gif",
+  "file_98.gif",
+  "file_99.gif",
+  "file_100.gif"
+];
 
-      // Extract GIF file names
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const links = [...doc.querySelectorAll('a')];
+const container = document.getElementById("banners");
 
-      const container = document.getElementById('banners');
+banners.forEach(name => {
+  const img = document.createElement("img");
+  img.src = "/static/banners/" + name;
 
-      links.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && href.endsWith('.gif')) {
-          const img = document.createElement('img');
-          img.src = '/static/banners/' + href;
+  // random spin speed
+  img.style.animationDuration = (Math.random()*5+2)+"s";
 
-          // random animation speed
-          img.style.animationDuration = (Math.random() * 4 + 2) + 's';
+  container.appendChild(img);
+});
 
-          container.appendChild(img);
-        }
-      });
+/* =========================
+   RANDOM POPUPS
+   ========================= */
+const popup = document.getElementById("popup");
 
-    } catch (e) {
-      console.log('Directory listing may be disabled.');
-    }
+setInterval(() => {
+  popup.style.display = "block";
+  setTimeout(() => popup.style.display = "none", 2000);
+}, 5000);
+
+/* =========================
+   FAKE CHAT
+   ========================= */
+const messages = [
+  "John: omg it works!!!",
+  "Sarah: i made $5000 😭",
+  "Mike: this is real??",
+  "Emily: THANK YOUUU",
+  "Chris: no way this works"
+];
+
+const chat = document.getElementById("chat");
+
+setInterval(() => {
+  const msg = document.createElement("div");
+  msg.textContent = messages[Math.floor(Math.random()*messages.length)];
+  chat.appendChild(msg);
+
+  if (chat.children.length > 10) {
+    chat.removeChild(chat.firstChild);
   }
+}, 1500);
 
-  loadBanners();
+/* =========================
+   CURSOR TRAIL + GLITTER
+   ========================= */
+document.addEventListener("mousemove", e => {
+  const sparkle = document.createElement("div");
+  sparkle.className = "sparkle";
+  sparkle.style.left = e.clientX + "px";
+  sparkle.style.top = e.clientY + "px";
+
+  document.body.appendChild(sparkle);
+
+  setTimeout(() => sparkle.remove(), 500);
+});
 </script>
 
 </body>
