@@ -278,7 +278,7 @@ setInterval(() => {
   msg.textContent = messages[Math.floor(Math.random()*messages.length)];
   chat.appendChild(msg);
 
-  if (chat.children.length > 10) {
+  if (chat.children.length > 100) {
     chat.removeChild(chat.firstChild);
   }
 }, 1500);
