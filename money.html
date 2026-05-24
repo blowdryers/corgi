@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>💰 TOTALLY LEGIT MONEY SITE 💰</title>
+
+<style>
+  body {
+    background: black;
+    color: lime;
+    font-family: Comic Sans MS, cursive;
+    text-align: center;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-size: 60px;
+    animation: flash 0.5s infinite;
+  }
+
+  @keyframes flash {
+    0% { color: red; }
+    50% { color: yellow; }
+    100% { color: lime; }
+  }
+
+  .warning {
+    background: red;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 18px;
+  }
+
+  .banner-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .banner-container img {
+    width: 200px;
+    border: 3px solid yellow;
+    animation: spin 5s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .btn {
+    margin-top: 30px;
+    font-size: 30px;
+    padding: 15px 30px;
+    background: gold;
+    color: black;
+    border: none;
+    cursor: pointer;
+    animation: bounce 0.8s infinite;
+  }
+
+  @keyframes bounce {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+  }
+
+  marquee {
+    font-size: 24px;
+    color: cyan;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="warning">
+⚠️ THIS WEBSITE IS A PARODY — NOT A REAL SERVICE ⚠️
+</div>
+
+<h1>💰 MAKE $1,000,000 IN 5 MINUTES 💰</h1>
+
+<marquee>🔥 LIMITED TIME OFFER 🔥 CLICK NOW 🔥 DO NOT MISS OUT 🔥</marquee>
+
+<button class="btn" onclick="alert('😂 You got baited (this is a parody)')">
+CLAIM YOUR FREE MONEY NOW
+</button>
+
+<div class="banner-container" id="banners"></div>
+
+<script>
+  // 🔥 Automatically load all GIF banners from folder
+  async function loadBanners() {
+    try {
+      const res = await fetch('/static/banners/');
+      const text = await res.text();
+
+      // Extract GIF file names
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const links = [...doc.querySelectorAll('a')];
+
+      const container = document.getElementById('banners');
+
+      links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.endsWith('.gif')) {
+          const img = document.createElement('img');
+          img.src = '/static/banners/' + href;
+
+          // random animation speed
+          img.style.animationDuration = (Math.random() * 4 + 2) + 's';
+
+          container.appendChild(img);
+        }
+      });
+
+    } catch (e) {
+      console.log('Directory listing may be disabled.');
+    }
+  }
+
+  loadBanners();
+</script>
+
+</body>
+</html>
