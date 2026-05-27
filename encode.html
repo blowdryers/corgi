@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>lol!!!!</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f0f2f5; margin:0; padding:20px; color:#111; }
+  h1 { text-align:center; margin-bottom:10px; }
+  .container { max-width:900px; margin:0 auto; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); }
+  label { display:block; font-weight:600; margin-top:12px; }
+  input[type="text"], textarea { width:100%; padding:10px; margin-top:6px; border:1px solid #ccc; border-radius:6px; font-size:1em; }
+  pre { background:#f7f7f8; padding:12px; border-radius:6px; overflow-x:auto; min-height:40px; }
+  .row { display:flex; gap:12px; margin-top:12px; flex-wrap:wrap; }
+  button { padding:10px 16px; font-size:1em; cursor:pointer; border:none; border-radius:6px; background:#007bff; color:white; transition:0.2s; }
+  button:hover { background:#0056b3; }
+  .secondary { background:#6c757d; }
+  .secondary:hover { background:#5a6268; }
+  h3 { margin-top:24px; border-bottom:1px solid #ddd; padding-bottom:4px; }
+  .small { font-size:0.85em; color:#555; }
+</style>
+</head>
+<body>
+<div class="container">
+  <p class="small">base64×3 >> base32 >> ROT13 >> XOR >> AES-GCM.</p>
+
+<label>Input text <input id="fajiweo" type="text" value="lol" /> </label>
+<label>Password <input id="qowief" type="text" value="567473bf6b0d89dece173d6ec156fb82-27210" /> </label>
+<label>PBKDF2 iterations <input id="lazxnv" type="text" value="200000" /> </label>
+
+  <div class="row">
+    <button id="zxcvbn">Encode</button>
+    <button id="poiuyt" class="secondary">Decode</button>
+    <button id="mnbvcx" class="secondary">New password</button>
+  </div>
+
+  <h3>Encoded</h3>
+  <pre id="asdqwe"></pre>
+
+<label>Decoder input</label> <input id="rtyuio" type="text" />
+
+  <h3>Decoded output</h3>
+  <pre id="lkjhgfd"></pre>
+</div>
+
+<script>
+function uiohgf(s){return new TextEncoder().encode(s);}
+function poytre(b){return new TextDecoder().decode(b);}
+function qwerty(b){return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
+function asdfgh(hex){const a=new Uint8Array(hex.length/2); for(let i=0;i<hex.length;i+=2) a[i/2]=parseInt(hex.substr(i,2),16); return a;}
+function zmxncb(bytes){let bin=''; const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk) bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); return btoa(bin);}
+function lkjhgf(b64){const bin=atob(b64); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a;}
+
+const poiuytBase32="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function mnbvcxz(b){let bits=0,v=0,out=''; for(let i=0;i<b.length;i++){v=(v<<8)|b[i]; bits+=8; while(bits>=5){out+=poiuytBase32[(v>>(bits-5))&31]; bits-=5;}} if(bits>0) out+=poiuytBase32[(v<<(5-bits))&31]; while(out.length%8!==0) out+='='; return out;}
+function qweasd(str){str=str.replace(/=+$/,'').toUpperCase(); let bits=0,v=0,out=[]; for(const c of str){const idx=poiuytBase32.indexOf(c); if(idx===-1) continue; v=(v<<5)|idx; bits+=5; if(bits>=8){ bits-=8; out.push((v>>bits)&0xFF);}} return new Uint8Array(out);}
+
+function rtyuio(s){return s.replace(/[A-Za-z]/g,c=>{const base=c<='Z'?65:97; return String.fromCharCode(((c.charCodeAt(0)-base+13)%26)+base);});}
+
+function fghjkl(a,b){const out=new Uint8Array(a.length); for(let i=0;i<a.length;i++) out[i]=a[i]^b[i%b.length]; return out;}
+function vbnmko(len){const a=new Uint8Array(len); crypto.getRandomValues(a); return a;}
+
+async function qazwsx(passBytes,salt,iter){const k=await crypto.subtle.importKey('raw',passBytes,{name:'PBKDF2'},false,['deriveKey','deriveBits']); return await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt,iterations:iter},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+async function edcrfv(passBytes,salt,iter,len){const k=await crypto.subtle.importKey('raw',passBytes,{name:'PBKDF2'},false,['deriveBits']); const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:iter},k,len); return new Uint8Array(bits);}
+
+async function tgbnhy(k,iv,pt){return new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,pt));}
+async function yhnmju(k,iv,ct){return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},k,ct));}
+
+async function uytres(pl,pw,it){
+  let a=uiohgf(pl);
+  for(let i=0;i<3;i++) a=lkjhgf(zmxncb(a));
+  const b32=mnbvcxz(a);
+  const rot=rtyuio(b32);
+  const rotBytes=uiohgf(rot);
+  const ks=vbnmko(16);
+  const pwBytes=uiohgf(pw);
+  const ksStream=await edcrfv(pwBytes,ks,it,rotBytes.length*8);
+  const x=fghjkl(rotBytes,ksStream);
+  const s=vbnmko(16);
+  const iv=vbnmko(12);
+  const key=await qazwsx(pwBytes,s,it);
+  const ct=await tgbnhy(key,iv,x);
+  const env={v:1,iterations:it,salt:qwerty(s),iv:qwerty(iv),keystreamSalt:qwerty(ks),ciphertext:zmxncb(ct)};
+  return zmxncb(uiohgf(JSON.stringify(env))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function opmlkj(enc,pw){
+  try{
+    const padStr=enc.replace(/-/g,'+').replace(/_/g,'/');
+    const pad=(4-(padStr.length%4))%4;
+    const base64=padStr+'='.repeat(pad);
+    const envBytes=lkjhgf(base64);
+    const env=JSON.parse(poytre(envBytes));
+    if(env.v!==1) throw 'x';
+    const iter=Number(env.iterations);
+    const s=asdfgh(env.salt);
+    const iv=asdfgh(env.iv);
+    const ks=asdfgh(env.keystreamSalt);
+    const ct=lkjhgf(env.ciphertext);
+    const pwBytes=uiohgf(pw);
+    const key=await qazwsx(pwBytes,s,iter);
+    const xored=await yhnmju(key,iv,ct);
+    const ksStream=await edcrfv(pwBytes,ks,iter,xored.length*8);
+    const rot=fghjkl(xored,ksStream);
+    const str=poytre(rot);
+    const b32=rtyuio(str);
+    let cur=qweasd(b32);
+    for(let i=0;i<3;i++) cur=lkjhgf(zmxncb(cur));
+    return {ok:true,result:poytre(cur)};
+  }catch(e){return {ok:false,error:String(e)};}
+}
+
+document.getElementById('zxcvbn').addEventListener('click',async ()=>{
+  const a=document.getElementById('fajiweo').value;
+  const b=document.getElementById('qowief').value;
+  const c=parseInt(document.getElementById('lazxnv').value,10)||200000;
+  document.getElementById('asdqwe').textContent='Working...';
+  const d=await uytres(a,b,c);
+  document.getElementById('asdqwe').textContent=d;
+});
+document.getElementById('poiuyt').addEventListener('click',async ()=>{
+  const a=(document.getElementById('rtyuio').value||document.getElementById('asdqwe').textContent||'').trim();
+  if(!a) return alert('Provide encoded blob.');
+  const b=document.getElementById('qowief').value;
+  document.getElementById('lkjhgfd').textContent='Decoding...';
+  const c=await opmlkj(a,b);
+  document.getElementById('lkjhgfd').textContent=c.ok?c.result:'Decode failed: '+c.error;
+});
+document.getElementById('mnbvcx').addEventListener('click',()=>document.getElementById('qowief').value=qwerty(vbnmko(16))+'-'+Math.floor(Math.random()*1e6));
+</script>
+</body>
+</html>
