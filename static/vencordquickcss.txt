@@ -1,0 +1,24 @@
+html {
+  filter: 
+    saturate(300%) 
+    contrast(160%) 
+    brightness(110%) 
+    hue-rotate(10deg);
+}
+
+*:hover {
+  filter: 
+    saturate(500%) 
+    contrast(200%) 
+    brightness(120%) 
+    hue-rotate(30deg);
+}
+
+img, video, canvas {
+  filter: 
+    saturate(400%) 
+    contrast(180%) 
+    brightness(115%);
+}
+
+
