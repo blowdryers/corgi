@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#111631;
+  --pn:#1a2142;
+  --pn2:#222b52;
+  --bd:#2d3766;
+  --tx:#e8ecf8;
+  --mt:#7a84a8;
+  --ac:#4f7cff;
+  --ac2:#6b5cff;
+  --ok:#2ee6a8;
+  --no:#ff4d6d;
+  --gd:#f0c040;
+  --gl:rgba(79,124,255,.12);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Syne',sans-serif;
+  background:var(--bg);
+  color:var(--tx);
+  display:flex;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%,rgba(79,124,255,.18),transparent),
+    radial-gradient(ellipse 60% 40% at 90% 100%,rgba(107,92,255,.12),transparent);
+  pointer-events:none;z-index:0;
+}
+.sb{
+  width:220px;min-width:220px;
+  background:var(--pn);
+  border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;
+  position:relative;z-index:2;
+  padding:28px 0;
+}
+.logo{
+  padding:0 24px 32px;
+  font-size:22px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--tx),var(--ac));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.nav{display:flex;flex-direction:column;gap:4px;padding:0 12px;flex:1}
+.nb{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:10px;
+  border:none;background:transparent;
+  color:var(--mt);font-family:inherit;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .18s;text-align:left;
+}
+.nb:hover{color:var(--tx);background:rgba(255,255,255,.04)}
+.nb.on{color:var(--tx);background:var(--gl);box-shadow:inset 3px 0 0 var(--ac)}
+.nb svg{width:18px;height:18px;opacity:.7;flex-shrink:0}
+.nb.on svg{opacity:1;color:var(--ac)}
+.sbf{padding:16px 20px;border-top:1px solid var(--bd);margin-top:auto}
+.sbf p{font-size:11px;color:var(--mt);line-height:1.5}
+.mn{flex:1;display:flex;flex-direction:column;position:relative;z-index:1;overflow:hidden}
+.hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 32px;border-bottom:1px solid var(--bd);
+  background:rgba(26,33,66,.6);backdrop-filter:blur(12px);
+}
+.hd h1{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.bw{
+  display:flex;align-items:center;gap:16px;
+}
+.bl{
+  display:flex;align-items:center;gap:10px;
+  background:var(--pn2);border:1px solid var(--bd);
+  border-radius:12px;padding:10px 18px;
+}
+.bl span{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.bl strong{
+  font-family:'JetBrains Mono',monospace;
+  font-size:18px;font-weight:500;color:var(--ok);
+}
+.rb{
+  background:linear-gradient(135deg,var(--ac),var(--ac2));
+  border:none;border-radius:10px;
+  color:#fff;font-family:inherit;font-size:13px;font-weight:700;
+  padding:10px 18px;cursor:pointer;transition:transform .15s,opacity .15s;
+}
+.rb:hover{transform:translateY(-1px);opacity:.92}
+.rb:active{transform:translateY(0)}
+.ct{flex:1;overflow-y:auto;padding:28px 32px}
+.gm{display:none;animation:fi .3s ease}
+.gm.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.gl{
+  display:grid;grid-template-columns:320px 1fr;gap:24px;
+  max-width:1100px;
+}
+@media(max-width:900px){.gl{grid-template-columns:1fr}}
+.pc{
+  background:var(--pn);border:1px solid var(--bd);
+  border-radius:16px;padding:24px;
+}
+.pc h3{font-size:13px;color:var(--mt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px;font-weight:600}
+.fg{margin-bottom:18px}
+.fg label{display:block;font-size:12px;color:var(--mt);margin-bottom:8px;font-weight:600}
+.fg input,.fg select{
+  width:100%;background:var(--bg);border:1px solid var(--bd);
+  border-radius:10px;padding:12px 14px;
+  color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:15px;
+  outline:none;transition:border-color .15s;
+}
+.fg input:focus,.fg select:focus{border-color:var(--ac)}
+.qb{display:flex;gap:8px;margin-top:8px}
+.qb button{
+  flex:1;background:var(--pn2);border:1px solid var(--bd);
+  border-radius:8px;padding:8px;color:var(--mt);
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  cursor:pointer;transition:all .15s;
+}
+.qb button:hover{border-color:var(--ac);color:var(--tx)}
+.go{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));
+  color:#fff;font-family:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;transition:transform .15s,opacity .15s;margin-top:4px;
+}
+.go:hover{transform:translateY(-1px);opacity:.92}
+.go:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.go.sc{background:linear-gradient(135deg,var(--ok),#1cb87a)}
+.gc{
+  background:var(--pn);border:1px solid var(--bd);
+  border-radius:16px;padding:28px;
+  display:flex;align-items:center;justify-content:center;
+  min-height:420px;position:relative;overflow:hidden;
+}
+.ms{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  width:100%;max-width:340px;
+}
+.mt{
+  aspect-ratio:1;border-radius:12px;
+  background:var(--pn2);border:1px solid var(--bd);
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+.mt:hover:not(.op):not(.ex){border-color:var(--ac);transform:scale(1.04)}
+.mt.op{background:rgba(46,230,168,.12);border-color:var(--ok)}
+.mt.ex{background:rgba(255,77,109,.15);border-color:var(--no)}
+.mt.op::after{content:'';width:14px;height:14px;border-radius:50%;background:var(--ok);box-shadow:0 0 12px var(--ok)}
+.mt.ex::after{content:'\2715';color:var(--no);font-size:18px;font-weight:700}
+.mx{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;width:100%;max-width:340px}
+.mx span{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--mt)}
+.mx strong{color:var(--gd);font-size:18px}
+.bj{display:flex;flex-direction:column;align-items:center;gap:24px;width:100%}
+.hz{display:flex;gap:12px;min-height:100px;align-items:center;justify-content:center;flex-wrap:wrap}
+.cd{
+  width:72px;height:100px;border-radius:10px;
+  background:linear-gradient(145deg,#fff,#e8ecf8);
+  border:1px solid #ccc;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;
+  color:#1a1a2e;font-weight:700;font-size:22px;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);
+  animation:dl .3s ease;
+}
+@keyframes dl{from{transform:translateY(-20px) rotate(-5deg);opacity:0}to{transform:none;opacity:1}}
+.cd.rd{color:var(--no)}
+.cd .su{font-size:11px;margin-top:4px;color:#666}
+.bja{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.bja button{
+  padding:12px 24px;border-radius:10px;border:1px solid var(--bd);
+  background:var(--pn2);color:var(--tx);
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .15s;
+}
+.bja button:hover{border-color:var(--ac)}
+.bja button.pr{background:var(--ac);border-color:var(--ac)}
+.plk{width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
+.plk canvas{border-radius:12px;background:var(--bg)}
+.pls{display:flex;gap:6px;width:100%;justify-content:center}
+.pls span{
+  flex:1;text-align:center;font-family:'JetBrains Mono',monospace;
+  font-size:11px;padding:6px 2px;border-radius:6px;
+  background:var(--pn2);color:var(--gd);font-weight:500;
+}
+.dc{display:flex;flex-direction:column;align-items:center;gap:28px;width:100%}
+.dn{
+  width:120px;height:120px;border-radius:20px;
+  background:var(--pn2);border:2px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;
+  color:var(--ac);transition:all .3s;
+}
+.dn.sp{animation:sp .6s ease}
+@keyframes sp{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.dop{display:flex;gap:10px}
+.dop button{
+  padding:14px 32px;border-radius:12px;border:2px solid var(--bd);
+  background:transparent;color:var(--mt);
+  font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .15s;
+}
+.dop button.on{border-color:var(--ac);color:var(--ac);background:var(--gl)}
+.dop button.ov.on{border-color:var(--ok);color:var(--ok);background:rgba(46,230,168,.08)}
+.dop button.un.on{border-color:var(--no);color:var(--no);background:rgba(255,77,109,.08)}
+.rps{display:flex;flex-direction:column;align-items:center;gap:28px;width:100%}
+.rpa{display:flex;gap:16px}
+.rpa button{
+  width:90px;height:90px;border-radius:16px;
+  background:var(--pn2);border:2px solid var(--bd);
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.rpa button:hover{border-color:var(--ac);transform:translateY(-3px)}
+.rpa button.sl{border-color:var(--ac);background:var(--gl);box-shadow:0 0 20px rgba(79,124,255,.2)}
+.rpa button svg{width:36px;height:36px;color:var(--tx)}
+.rvs{display:flex;gap:40px;align-items:center}
+.rvs div{text-align:center}
+.rvs p{font-size:11px;color:var(--mt);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+.rvs .ic{
+  width:80px;height:80px;border-radius:14px;
+  background:var(--pn2);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;
+}
+.rvs .ic svg{width:32px;height:32px;color:var(--mt)}
+.whl{display:flex;flex-direction:column;align-items:center;gap:24px;width:100%}
+.whc{position:relative;width:320px;height:320px}
+.whc canvas{border-radius:50%;cursor:pointer}
+.whp{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:50px;height:50px;border-radius:50%;
+  background:var(--pn);border:3px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  color:var(--gd);pointer-events:none;
+}
+.wht{
+  position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-top:16px solid var(--gd);
+}
+.st{
+  margin-top:16px;padding:12px 16px;border-radius:10px;
+  font-size:13px;font-weight:600;text-align:center;
+  font-family:'JetBrains Mono',monospace;
+}
+.st.ok{background:rgba(46,230,168,.1);color:var(--ok);border:1px solid rgba(46,230,168,.2)}
+.st.no{background:rgba(255,77,109,.1);color:var(--no);border:1px solid rgba(255,77,109,.2)}
+.st.nu{background:rgba(79,124,255,.1);color:var(--ac);border:1px solid rgba(79,124,255,.2)}
+.rg{display:flex;gap:8px;flex-wrap:wrap}
+.rg label{
+  flex:1;min-width:60px;text-align:center;padding:10px 8px;
+  border-radius:8px;border:1px solid var(--bd);
+  background:var(--pn2);cursor:pointer;font-size:13px;
+  transition:all .15s;
+}
+.rg input{display:none}
+.rg input:checked+label{border-color:var(--ac);background:var(--gl);color:var(--ac)}
+</style>
+</head>
+<body>
+<aside class="sb">
+  <div class="logo">VAULT</div>
+  <nav class="nav">
+    <button class="nb on" data-g="ms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Mines</button>
+    <button class="nb" data-g="bj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="14" height="18" rx="2"/><rect x="8" y="2" width="14" height="18" rx="2"/></svg>Blackjack</button>
+    <button class="nb" data-g="pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Plinko</button>
+    <button class="nb" data-g="dc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="16" cy="16" r="1" fill="currentColor"/></svg>Dice</button>
+    <button class="nb" data-g="rp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11l5-5 5 5M7 13l5 5 5-5"/></svg>RPS</button>
+    <button class="nb" data-g="wh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg>Wheel</button>
+  </nav>
+  <div class="sbf"><p>Play money only. No real currency involved.</p></div>
+</aside>
+<main class="mn">
+  <header class="hd">
+    <h1 id="gt">Mines</h1>
+    <div class="bw">
+      <div class="bl"><span>Balance</span><strong id="bl">10,000.00</strong></div>
+      <button class="rb" id="rf">+5,000</button>
+    </div>
+  </header>
+  <div class="ct">
+    <section class="gm on" id="g-ms">
+      <div class="gl">
+        <div class="pc">
+          <h3>Bet Panel</h3>
+          <div class="fg"><label>Amount</label><input type="number" id="ms-b" value="100" min="1"><div class="qb"><button data-t="ms-b" data-v="50">50</button><button data-t="ms-b" data-v="100">100</button><button data-t="ms-b" data-v="500">500</button><button data-t="ms-b" data-v="max">Max</button></div></div>
+          <div class="fg"><label>Mines</label><input type="number" id="ms-m" value="5" min="1" max="24"></div>
+          <button class="go" id="ms-go">Start Game</button>
+          <button class="go sc" id="ms-co" style="display:none;margin-top:10px">Cash Out</button>
+          <div class="st nu" id="ms-st" style="display:none"></div>
+        </div>
+        <div class="gc"><div style="display:flex;flex-direction:column;align-items:center;width:100%"><div class="mx"><span>Multiplier</span><strong id="ms-x">1.00x</strong></div><div class="ms" id="ms-g"></div></div></div>
+      </div>
+    </section>
+    <section class="gm" id="g-bj">
+      <div class="gl">
+        <div class="pc">
+          <h3>Bet Panel</h3>
+          <div class="fg"><label>Amount</label><input type="number" id="bj-b" value="100" min="1"><div class="qb"><button data-t="bj-b" data-v="50">50</button><button data-t="bj-b" data-v="100">100</button><button data-t="bj-b" data-v="500">500</button><button data-t="bj-b" data-v="max">Max</button></div></div>
+          <button class="go" id="bj-go">Deal</button>
+          <div class="st nu" id="bj-st" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="gc">
+          <div class="bj">
+            <div><p style="font-size:11px;color:var(--mt);margin-bottom:8px;text-align:center">DEALER</p><div class="hz" id="bj-d"></div></div>
+            <div class="bja" id="bj-a" style="display:none"><button class="pr" id="bj-h">Hit</button><button id="bj-s">Stand</button><button id="bj-dbl">Double</button></div>
+            <div><p style="font-size:11px;color:var(--mt);margin-bottom:8px;text-align:center">YOU</p><div class="hz" id="bj-p"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="gm" id="g-pk">
+      <div class="gl">
+        <div class="pc">
+          <h3>Bet Panel</h3>
+          <div class="fg"><label>Amount</label><input type="number" id="pk-b" value="100" min="1"><div class="qb"><button data-t="pk-b" data-v="50">50</button><button data-t="pk-b" data-v="100">100</button><button data-t="pk-b" data-v="500">500</button><button data-t="pk-b" data-v="max">Max</button></div></div>
+          <div class="fg"><label>Risk</label><div class="rg"><input type="radio" name="pk-r" id="pk-r1" value="8" checked><label for="pk-r1">Low</label><input type="radio" name="pk-r" id="pk-r2" value="12"><label for="pk-r2">Med</label><input type="radio" name="pk-r" id="pk-r3" value="16"><label for="pk-r3">High</label></div></div>
+          <button class="go" id="pk-go">Drop Ball</button>
+          <div class="st nu" id="pk-st" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="gc"><div class="plk"><canvas id="pk-c" width="480" height="420"></canvas><div class="pls" id="pk-s"></div></div></div>
+      </div>
+    </section>
+    <section class="gm" id="g-dc">
+      <div class="gl">
+        <div class="pc">
+          <h3>Bet Panel</h3>
+          <div class="fg"><label>Amount</label><input type="number" id="dc-b" value="100" min="1"><div class="qb"><button data-t="dc-b" data-v="50">50</button><button data-t="dc-b" data-v="100">100</button><button data-t="dc-b" data-v="500">500</button><button data-t="dc-b" data-v="max">Max</button></div></div>
+          <div class="fg"><label>Target (1-99)</label><input type="number" id="dc-t" value="50" min="1" max="99"></div>
+          <div class="st nu" id="dc-st" style="display:none;margin-bottom:12px"></div>
+          <button class="go" id="dc-go">Roll</button>
+        </div>
+        <div class="gc">
+          <div class="dc">
+            <div class="dop"><button class="ov" id="dc-ov">Over</button><button class="un on" id="dc-un">Under</button></div>
+            <div class="dn" id="dc-n">--</div>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--mt)">Win chance: <span id="dc-p" style="color:var(--gd)">49%</span> | Payout: <span id="dc-x" style="color:var(--ok)">2.00x</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="gm" id="g-rp">
+      <div class="gl">
+        <div class="pc">
+          <h3>Bet Panel</h3>
+          <div class="fg"><label>Amount</label><input type="number" id="rp-b" value="100" min="1"><div class="qb"><button data-t="rp-b" data-v="50">50</button><button data-t="rp-b" data-v="100">100</button><button data-t="rp-b" data-v="500">500</button><button data-t="rp-b" data-v="max">Max</button></div></div>
+          <button class="go" id="rp-go" disabled>Play</button>
+          <div class="st nu" id="rp-st" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="gc">
+          <div class="rps">
+            <div class="rpa">
+              <button data-p="0" id="rp-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="5"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></button>
+              <button data-p="1" id="rp-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 6V4h8v2"/></svg></button>
+              <button data-p="2" id="rp-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l16 16M20 4L4 20"/></svg></button>
+            </div>
+            <div class="rvs">
+              <div><p>You</p><div class="ic" id="rp-y"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/></svg></div></div>
+              <div style="font-size:24px;font-weight:800;color:var(--bd)">VS</div>
+              <div><p>House</p><div class="ic" id="rp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/></svg></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="gm" id="g-wh">
+      <div class="gl">
+        <div class="pc">
+          <h3>Bet Panel</h3>
+          <div class="fg"><label>Amount</label><input type="number" id="wh-b" value="100" min="1"><div class="qb"><button data-t="wh-b" data-v="50">50</button><button data-t="wh-b" data-v="100">100</button><button data-t="wh-b" data-v="500">500</button><button data-t="wh-b" data-v="max">Max</button></div></div>
+          <button class="go" id="wh-go">Spin</button>
+          <div class="st nu" id="wh-st" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="gc">
+          <div class="whl">
+            <div class="whc"><div class="wht"></div><canvas id="wh-c" width="320" height="320"></canvas><div class="whp" id="wh-m">SPIN</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<audio preload="auto" src="blackjack_changebetamount.mp3"></audio>
+<audio preload="auto" src="blackjack_shuffle.mp3"></audio>
+<audio preload="auto" src="click.mp3"></audio>
+<audio preload="auto" src="dice_roll.mp3"></audio>
+<audio preload="auto" src="dice_win.mp3"></audio>
+<audio preload="auto" src="mines_lose.mp3"></audio>
+<audio preload="auto" src="mines_placesound.mp3"></audio>
+<audio preload="auto" src="plinko_win.mp3"></audio>
+<audio preload="auto" src="putcardontable_blackjack.mp3"></audio>
+<audio preload="auto" src="rps_losae.mp3"></audio>
+<audio preload="auto" src="rps_selectchoice.mp3"></audio>
+<audio preload="auto" src="rps_tie.mp3"></audio>
+<audio preload="auto" src="rps_win.mp3"></audio>
+<audio preload="auto" src="wheel_spinandwin.mp3"></audio>
+<script>
+(function(){
+  var b=10000;
+  var $=function(i){return document.getElementById(i)};
+  var sa={};
+  function ps(n){try{var a=sa[n];if(!a){a=document.querySelector('audio[src="'+n+'"]');if(!a){a=new Audio(n);a.preload='auto'}sa[n]=a}a.currentTime=0;a.play()}catch(e){}}
+  document.addEventListener('click',function(e){if(e.target.closest('button,.mt,.nb,.qb button,.dop button,.rpa button,.bja button,.go,.rb'))ps('click.mp3')},true);
+  var bl=$('bl');
+  function fb(v){return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function ub(){bl.textContent=fb(b)}
+  function sb(m,t,c){var e=$(m+'-st');if(!e)return;e.style.display='block';e.className='st '+c;e.textContent=t}
+  function hb(m){var e=$(m+'-st');if(e)e.style.display='none'}
+  function tk(n){if(n<=0||n>b){return false}b-=n;ub();return true}
+  function wn(n){b+=n;ub()}
+  $('rf').onclick=function(){b+=5000;ub()};
+
+  document.querySelectorAll('.nb').forEach(function(n){
+    n.onclick=function(){
+      document.querySelectorAll('.nb').forEach(function(x){x.classList.remove('on')});
+      document.querySelectorAll('.gm').forEach(function(x){x.classList.remove('on')});
+      n.classList.add('on');
+      var g=n.dataset.g;
+      $('g-'+g).classList.add('on');
+      var t={ms:'Mines',bj:'Blackjack',pk:'Plinko',dc:'Dice',rp:'RPS',wh:'Wheel'};
+      $('gt').textContent=t[g]||g;
+    };
+  });
+
+  document.querySelectorAll('.qb button').forEach(function(q){
+    q.onclick=function(){
+      var el=$(q.dataset.t);
+      el.value=q.dataset.v==='max'?Math.floor(b):q.dataset.v;
+      if(q.dataset.t==='bj-b')ps('blackjack_changebetamount.mp3');
+    };
+  });
+  $('bj-b').oninput=function(){ps('blackjack_changebetamount.mp3')};
+
+  var mg=null,mm=0,mc=0,mb=0,mx=1;
+  function mX(n,m){var r=1;for(var i=0;i<n;i++)r*=(25-m-i)/(25-i);return Math.max(1,r*0.97)}
+  function bM(){var g=$('ms-g');g.innerHTML='';for(var i=0;i<25;i++){var t=document.createElement('div');t.className='mt';t.dataset.i=i;t.onclick=function(){mR(+this.dataset.i)};g.appendChild(t)}}
+  bM();
+  $('ms-go').onclick=function(){
+    hb('ms');var n=+($('ms-b').value);mm=+($('ms-m').value);
+    if(n<=0||mm<1||mm>24)return;
+    if(!tk(n))return;
+    mb=n;mc=0;mx=1;
+    mg=Array(25).fill(0);
+    var p=Array.from({length:25},function(_,i){return i});
+    for(var i=p.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=p[i];p[i]=p[j];p[j]=t}
+    for(var k=0;k<mm;k++)mg[p[k]]=-1;
+    bM();$('ms-x').textContent='1.00x';$('ms-go').style.display='none';$('ms-co').style.display='block';
+  };
+  function mR(i){
+    if(!mg||mg[i]===1)return;
+    var ts=document.querySelectorAll('.mt');
+    if(mg[i]===-1){ts[i].classList.add('ex');mF();return}
+    ps('mines_placesound.mp3');mg[i]=1;mc++;ts[i].classList.add('op');
+    mx=mX(mc,mm);$('ms-x').textContent=mx.toFixed(2)+'x';
+    if(mc===25-mm){var w=mb*mx;wn(w);sb('ms','Cleared board — '+fb(w),'ok');mE()}
+  }
+  function mF(){
+    var ts=document.querySelectorAll('.mt');
+    mg.forEach(function(v,i){if(v===-1)ts[i].classList.add('ex')});
+    ps('mines_lose.mp3');sb('ms','Mine hit — -'+fb(mb),'no');mE();
+  }
+  function mE(){
+    $('ms-co').style.display='none';$('ms-go').style.display='block';mg=null;
+  }
+  $('ms-co').onclick=function(){
+    if(!mg||mc===0)return;
+    var w=mb*mx;wn(w);
+    sb('ms','Cashed out '+fb(w)+' ('+mx.toFixed(2)+'x)','ok');
+    var ts=document.querySelectorAll('.mt');
+    mg.forEach(function(v,i){if(v===-1)ts[i].classList.add('ex')});
+    mE();
+  };
+
+  var dk=[],dh=[],ph=[],db=0,bg=false;
+  var ss=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  function nD(){var d=[];for(var s=0;s<4;s++)for(var v=0;v<13;v++)d.push(v);for(var i=d.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=d[i];d[i]=d[j];d[j]=t}return d}
+  function cV(c){return c[0]===0?11:c[0]>=9?10:c[0]+1}
+  function hV(h){var t=0,a=0;h.forEach(function(c){if(c[0]===0)a++;t+=cV(c)});while(a>0&&t>21){t-=10;a--}return t}
+  function dR(c,el,ha){ha.push(c);var d=document.createElement('div');d.className='cd';if(c[1]===1||c[1]===2)d.classList.add('rd');d.innerHTML=ss[c[0]]+'<span class="su">'+(c[1]===0?'\2660':c[1]===1?'\2665':c[1]===2?'\2666':'\2663')+'</span>';el.appendChild(d);return d}
+  function dC(){dk=nD();dh=[];ph=[];db=0;bg=false;$('bj-d').innerHTML='';$('bj-p').innerHTML='';$('bj-a').style.display='none';hb('bj')}
+  function dP(){
+    dR([dk.pop(),Math.floor(Math.random()*4)],$('bj-p'),ph);
+    dR([dk.pop(),Math.floor(Math.random()*4)],$('bj-d'),dh);
+    dR([dk.pop(),Math.floor(Math.random()*4)],$('bj-p'),ph);
+    var hc=[dk.pop(),Math.floor(Math.random()*4)];
+    var dc=dR(hc,$('bj-d'),dh);dc.style.opacity='.3';
+    $('bj-a').style.display='flex';bg=true;
+    if(hV(ph)===21)bS(true);
+  }
+  $('bj-go').onclick=function(){hb('bj');var n=+($('bj-b').value);if(n<=0)return;if(!tk(n))return;ps('blackjack_shuffle.mp3');db=n;dC();dP()};
+  function bS(st){
+    if(!st){while(hV(dh)<17)dR([dk.pop(),Math.floor(Math.random()*4)],$('bj-d'),dh)}
+    document.querySelectorAll('#bj-d .cd').forEach(function(c){c.style.opacity='1'});
+    var pv=hV(ph),dv=hV(dh);
+    $('bj-a').style.display='none';bg=false;
+    if(pv>21){sb('bj','Bust — -'+fb(db),'no')}
+    else if(dv>21){wn(db*2);sb('bj','Dealer bust — +'+fb(db*2),'ok')}
+    else if(pv>dv){wn(db*2);sb('bj','Win — +'+fb(db*2),'ok')}
+    else if(pv===dv){wn(db);sb('bj','Push — bet returned','nu')}
+    else{sb('bj','Dealer wins — -'+fb(db),'no')}
+  }
+  $('bj-h').onclick=function(){if(!bg)return;ps('putcardontable_blackjack.mp3');dR([dk.pop(),Math.floor(Math.random()*4)],$('bj-p'),ph);if(hV(ph)>21)bS(true);else if(hV(ph)===21)bS(false)};
+  $('bj-s').onclick=function(){if(bg)bS(false)};
+  $('bj-dbl').onclick=function(){if(!bg||b<db)return;tk(db);db*=2;dR([dk.pop(),Math.floor(Math.random()*4)],$('bj-p'),ph);bS(hV(ph)>21)};
+
+  var pk=null,pb=false;
+  var pM={8:[5.6,2.1,1.1,1,0.5,1,1.1,2.1,5.6],12:[10,3,1.4,0.6,0.3,0.5,0.3,0.6,1.4,3,10],16:[16,9,2,1.4,1.1,1,0.5,0.3,0.5,1,1.1,1.4,2,9,16]};
+  function pI(){
+    pk=$('pk-c');if(!pk)return;
+    var cx=pk.getContext('2d'),rw=+document.querySelector('input[name="pk-r"]:checked').value;
+    var ml=pM[rw],w=pk.width,h=pk.height;
+    cx.fillStyle='#111631';cx.fillRect(0,0,w,h);
+    var pg=[],bw=32;
+    for(var r=0;r<rw;r++){var off=r%2?bw/2:0,n=r%2?rw:r+1;for(var c=0;c<n;c++){pg.push({x:off+c*bw+(w-(n*bw))/2,y:40+r*24})}}
+    cx.fillStyle='#2d3766';
+    pg.forEach(function(p){cx.beginPath();cx.arc(p.x,p.y,4,0,Math.PI*2);cx.fill()});
+    var sl=$('pk-s');sl.innerHTML='';
+    ml.forEach(function(m){var s=document.createElement('span');s.textContent=m+'x';sl.appendChild(s)});
+    return{pg:pg,ml:ml,rw:rw,w:w,h:h};
+  }
+  var pD=pI();
+  document.querySelectorAll('input[name="pk-r"]').forEach(function(r){r.onchange=function(){pD=pI()}});
+  function pDr(cx){
+    cx.fillStyle='#111631';cx.fillRect(0,0,pD.w,pD.h);
+    pD.pg.forEach(function(p){cx.fillStyle='#2d3766';cx.beginPath();cx.arc(p.x,p.y,4,0,Math.PI*2);cx.fill()});
+  }
+  function pA(bx,by,vx,vy,cb){
+    var f=function(){
+      bx+=vx;by+=vy;vy+=0.18;
+      if(by>=pD.h-36){
+        var sl=pD.ml.length,sw=pD.w/sl,si=Math.floor(bx/sw);
+        cb(Math.max(0,Math.min(sl-1,si)));return;
+      }
+      pD.pg.forEach(function(p){
+        var dx=bx-p.x,dy=by-p.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<13){var a=Math.atan2(dy,dx),sp=2.8;vx=Math.cos(a)*sp+(Math.random()-.5)*.6;vy=Math.sin(a)*sp-1.2}
+      });
+      bx=Math.max(8,Math.min(pD.w-8,bx));
+      var cx=pk.getContext('2d');pDr(cx);
+      cx.fillStyle='#4f7cff';cx.beginPath();cx.arc(bx,by,8,0,Math.PI*2);cx.fill();
+      cx.shadowColor='#4f7cff';cx.shadowBlur=12;
+      requestAnimationFrame(f);
+    };f();
+  }
+  $('pk-go').onclick=function(){
+    if(pb)return;hb('pk');var n=+($('pk-b').value);if(n<=0)return;if(!tk(n))return;
+    pb=true;pD=pI();ps('plinko_win.mp3');
+    pA(pD.w/2,10,(Math.random()-.5)*3,0,function(si){
+      var m=pD.ml[si],w=n*m;wn(w);
+      sb('pk','Landed on '+m+'x — '+fb(w),m>=1?'ok':'no');
+      pb=false;
+    });
+  };
+
+  var dU=true;
+  function dUc(){var t=+($('dc-t').value)||50;t=Math.max(1,Math.min(99,t));$('dc-t').value=t;
+    var ch=dU?(t-1):(100-t),pc=ch/100,x=Math.floor(9800/pc)/100;
+    $('dc-p').textContent=ch+'%';$('dc-x').textContent=x.toFixed(2)+'x';return{t:t,ch:ch,x:x}}
+  dUc();
+  $('dc-t').oninput=dUc;
+  $('dc-ov').onclick=function(){dU=true;$('dc-ov').classList.add('on');$('dc-un').classList.remove('on');dUc()};
+  $('dc-un').onclick=function(){dU=false;$('dc-un').classList.add('on');$('dc-ov').classList.remove('on');dUc()};
+  $('dc-go').onclick=function(){
+    hb('dc');var n=+($('dc-b').value);if(n<=0)return;if(!tk(n))return;ps('dice_roll.mp3');
+    var d=dUc(),r=Math.floor(Math.random()*100)+1;
+    var dn=$('dc-n');dn.textContent='..';dn.classList.add('sp');
+    setTimeout(function(){
+      dn.classList.remove('sp');dn.textContent=r;
+      var w=(dU?r>d.t:r<d.t);
+      if(w){var p=n*d.x;wn(p);ps('dice_win.mp3');sb('dc','Rolled '+r+' — Win '+fb(p),'ok')}
+      else{sb('dc','Rolled '+r+' — Lost '+fb(n),'no')}
+    },500);
+  };
+
+  var rI=[0,1,2],rN=['Rock','Paper','Scissors'],rS=null;
+  var rSv=[
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="5"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 6V4h8v2"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l16 16M20 4L4 20"/></svg>'
+  ];
+  document.querySelectorAll('.rpa button').forEach(function(bt){
+    bt.onclick=function(){
+      document.querySelectorAll('.rpa button').forEach(function(x){x.classList.remove('sl')});
+      bt.classList.add('sl');rS=+bt.dataset.p;$('rp-go').disabled=false;ps('rps_selectchoice.mp3');
+      $('rp-y').innerHTML=rSv[rS];
+    };
+  });
+  $('rp-go').onclick=function(){
+    if(rS===null)return;hb('rp');var n=+($('rp-b').value);if(n<=0)return;if(!tk(n))return;
+    var h=Math.floor(Math.random()*3);
+    $('rp-h').innerHTML=rSv[h];
+    var w=(rS===0&&h===2)||(rS===1&&h===0)||(rS===2&&h===1);
+    var t=rS===h;
+    if(w){wn(n*2);ps('rps_win.mp3');sb('rp',rN[rS]+' beats '+rN[h]+' — +'+fb(n*2),'ok')}
+    else if(t){wn(n);ps('rps_tie.mp3');sb('rp','Draw — bet returned','nu')}
+    else{ps('rps_losae.mp3');sb('rp',rN[h]+' beats '+rN[rS]+' — -'+fb(n),'no')}
+  };
+
+  var wS=[0.5,0.5,1,1,1.5,1.5,2,2,3,0.3,0.3,5];
+  var wC=['#ff4d6d','#4f7cff','#2ee6a8','#f0c040','#6b5cff','#ff4d6d','#4f7cff','#2ee6a8','#f0c040','#6b5cff','#ff4d6d','#2ee6a8'];
+  var wA=0,wB=false;
+  function wD(){
+    var cv=$('wh-c'),cx=cv.getContext('2d'),n=wS.length,s=360/n,r=cv.width/2;
+    cx.clearRect(0,0,cv.width,cv.height);
+    cx.save();cx.translate(r,r);cx.rotate(wA*Math.PI/180);
+    for(var i=0;i<n;i++){
+      cx.beginPath();cx.moveTo(0,0);cx.arc(0,0,r-4,i*s*Math.PI/180,(i+1)*s*Math.PI/180);cx.closePath();
+      cx.fillStyle=wC[i];cx.fill();cx.strokeStyle='#111631';cx.lineWidth=2;cx.stroke();
+      cx.save();cx.rotate((i+.5)*s*Math.PI/180);
+      cx.fillStyle='#fff';cx.font='bold 11px JetBrains Mono';cx.textAlign='right';
+      cx.fillText(wS[i]+'x',r-20,4);cx.restore();
+    }
+    cx.restore();
+    cx.beginPath();cx.arc(r,r,22,0,Math.PI*2);cx.fillStyle='#1a2142';cx.fill();cx.strokeStyle='#2d3766';cx.lineWidth=2;cx.stroke();
+  }
+  wD();
+  function wP(tf,cb){
+    var st=performance.now(),du=3800,sp0=6+Math.random()*4,fa=wA,td=tf+sp0*360;
+    function f(n){
+      var el=n-st,p=Math.min(el/du,1),ea=1-Math.pow(1-p,3);
+      wA=fa+td*ea;wD();
+      if(p<1)requestAnimationFrame(f);else{wA=fa+td;wD();cb()}
+    }
+    requestAnimationFrame(f);
+  }
+  $('wh-go').onclick=function(){
+    if(wB)return;hb('wh');var n=+($('wh-b').value);if(n<=0)return;if(!tk(n))return;
+    wB=true;
+    var ti=Math.floor(Math.random()*wS.length),ta=360/wS.length,tf=270-(ti+.5)*ta;
+    wP(tf,function(){
+      var m=wS[ti],p=n*m;wn(p);
+      if(m>=1)ps('wheel_spinandwin.mp3');
+      sb('wh','Hit '+m+'x — '+fb(p),m>=1?'ok':'no');$('wh-m').textContent=m+'x';wB=false;
+    });
+  };
+})();
+</script>
+</body>
+</html>
