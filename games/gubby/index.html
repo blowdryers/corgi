@@ -22,6 +22,7 @@ html, body {
   color: #00aaff;
   font-size: 32px;
   cursor: pointer;
+  z-index: 2;
 }
 
 video {
@@ -31,9 +32,11 @@ video {
   object-fit: contain;
 }
 
+
 img {
   position: absolute;
   display: none;
+  z-index: 1;
 }
 </style>
 </head>
@@ -59,7 +62,7 @@ start.onclick = () => {
 };
 
 v.onended = () => {
-  v.style.display = "none";
+  v.pause(); 
   kreek.style.display = "block";
   gubby.style.display = "block";
 };
