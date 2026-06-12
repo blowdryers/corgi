@@ -8,34 +8,61 @@ html, body {
   height: 100%;
   background: black;
   overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+
+#start {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00aaff;
+  font-size: 32px;
+  cursor: pointer;
 }
 
 video {
+  display: none;
   width: 100vw;
   height: 100vh;
   object-fit: contain;
-  cursor: crosshair;
+}
+
+img {
+  position: absolute;
+  display: none;
 }
 </style>
 </head>
 <body>
 
-<video id="v" src="/games/gubby/isthatagubby.mp4" autoplay loop></video>
+<div id="start">click the screen</div>
+
+<video id="v" src="/games/gubby/isthatagubby.mp4"></video>
+
+<img id="kreek" src="kreek.jpg" style="left:601px; top:307px;">
+<img id="gubby" src="gubby.jpg" style="left:1259px; top:548px;">
 
 <script>
+const start = document.getElementById("start");
 const v = document.getElementById("v");
+const kreek = document.getElementById("kreek");
+const gubby = document.getElementById("gubby");
 
-v.addEventListener("click", e => {
-  const rect = v.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+start.onclick = () => {
+  start.style.display = "none";
+  v.style.display = "block";
+  v.play();
+};
 
-  const pos = `${Math.floor(x)}, ${Math.floor(y)}`;
-
-  navigator.clipboard.writeText(pos);
-
-  alert("Position: " + pos + " (copied)");
-});
+v.onended = () => {
+  v.style.display = "none";
+  kreek.style.display = "block";
+  gubby.style.display = "block";
+};
 </script>
 
 </body>
