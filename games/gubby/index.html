@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  background: black;
+  overflow: hidden;
+}
+
+video {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  cursor: crosshair;
+}
+</style>
+</head>
+<body>
+
+<video id="v" src="/games/gubby/isthatagubby.mp4" autoplay loop></video>
+
+<script>
+const v = document.getElementById("v");
+
+v.addEventListener("click", e => {
+  const rect = v.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const pos = `${Math.floor(x)}, ${Math.floor(y)}`;
+
+  navigator.clipboard.writeText(pos);
+
+  alert("Position: " + pos + " (copied)");
+});
+</script>
+
+</body>
+</html>
