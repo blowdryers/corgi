@@ -14,9 +14,9 @@ body {
   font-weight: 700;
 }
 
-/* start screen */
+/* CLICK SCREEN (FULL OVERLAY) */
 #start {
-  position: absolute;
+  position: fixed;
   width: 100%;
   height: 100%;
   display: flex;
@@ -24,9 +24,12 @@ body {
   justify-content: center;
   font-size: 24px;
   cursor: pointer;
+  z-index: 999;
+  background: black;
+  color: #814430;
 }
 
-/* video */
+/* VIDEO */
 video {
   position: fixed;
   width: 100%;
@@ -35,7 +38,7 @@ video {
   z-index: 1;
 }
 
-/* centered text ONLY (no box) */
+/* CENTER TEXT (NO BOX) */
 #info {
   position: fixed;
   top: 50%;
