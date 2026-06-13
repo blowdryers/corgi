@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Client Info</title>
+<style>
+  body {
+    background: #0b0b0b;
+    color: #00ffcc;
+    font-family: monospace;
+    padding: 20px;
+  }
+  pre {
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+<h1>Client Info</h1>
+<pre id="info">Loading...</pre>
+
+<script>
+async function getInfo() {
+  const info = {};
+
+  // Browser + system info
+  info.userAgent = navigator.userAgent;
+  info.platform = navigator.platform;
+  info.language = navigator.language;
+  info.languages = navigator.languages;
+  info.cookiesEnabled = navigator.cookieEnabled;
+  info.online = navigator.onLine;
+
+  // Screen
+  info.screen = {
+    width: screen.width,
+    height: screen.height,
+    availWidth: screen.availWidth,
+    availHeight: screen.availHeight,
+    colorDepth: screen.colorDepth
+  };
+
+  // Window size
+  info.window = {
+    innerWidth: window.innerWidth,
+    innerHeight: window.innerHeight
+  };
+
+  // Timezone
+  info.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Hardware (limited)
+  info.hardware = {
+    cores: navigator.hardwareConcurrency || "unknown",
+    memoryGB: navigator.deviceMemory || "unknown"
+  };
+
+  // Try to get IP (requires external API)
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    info.ip = data.ip;
+  } catch {
+    info.ip = "Could not fetch IP";
+  }
+
+  document.getElementById("info").textContent =
+    JSON.stringify(info, null, 2);
+}
+
+getInfo();
+</script>
+
+</body>
+</html>
