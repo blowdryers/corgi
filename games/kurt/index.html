@@ -1,5 +1,126 @@
-<html>
-  <body>
-    <p1>test</p1>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Info + Video Loader</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: #00ffcc;
+    font-family: monospace;
+    overflow: hidden;
+  }
+
+  #start {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    background: black;
+    z-index: 10;
+  }
+
+  video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+  }
+
+  #info {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 5;
+    white-space: pre-line;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    border: 1px solid #00ffcc;
+    max-width: 90%;
+  }
+</style>
+</head>
+<body>
+
+<div id="start">CLICK ANYWHERE TO ENTER</div>
+
+<video id="vid" muted loop>
+  <source src="videoplayback (5).mp4" type="video/mp4">
+</video>
+
+<audio id="audio" loop>
+  <source src="Basement - Covet [Slowed] [TIKTOK VER.].mp3" type="audio/mpeg">
+</audio>
+
+<div id="info">Loading system info...</div>
+
+<script>
+const start = document.getElementById("start");
+const vid = document.getElementById("vid");
+const audio = document.getElementById("audio");
+const info = document.getElementById("info");
+
+function getGPU() {
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    return debugInfo
+      ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+      : "Unknown GPU";
+  } catch {
+    return "Unavailable";
+  }
+}
+
+async function getIP() {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip;
+  } catch {
+    return "Unavailable";
+  }
+}
+
+start.addEventListener("click", async () => {
+  start.style.display = "none";
+
+  vid.play();
+  audio.play();
+
+  const ip = await getIP();
+
+  const infoText = `
+IP: ${ip}
+
+Browser: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+
+CPU Cores: ${navigator.hardwareConcurrency || "Unknown"}
+
+Screen: ${screen.width}x${screen.height}
+Color Depth: ${screen.colorDepth}
+
+GPU: ${getGPU()}
+
+Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+
+Network: ${navigator.connection ? navigator.connection.effectiveType : "Unknown"}
+  `.trim();
+
+  info.textContent = infoText;
+});
+</script>
+
+</body>
 </html>
