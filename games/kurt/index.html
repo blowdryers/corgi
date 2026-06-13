@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Info</title>
+<title>Device Info</title>
 
 <style>
 body {
@@ -10,44 +10,39 @@ body {
   background: black;
   overflow: hidden;
   color: #814430;
-  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,sans-serif;
   font-weight: 700;
 }
 
-/* CLICK SCREEN (FULL OVERLAY) */
 #start {
   position: fixed;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  cursor: pointer;
-  z-index: 999;
-  background: black;
-  color: #814430;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  cursor:pointer;
+  z-index:999;
 }
 
-/* VIDEO */
 video {
   position: fixed;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:1;
 }
 
-/* CENTER TEXT (NO BOX) */
 #info {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 28px;
-  text-align: center;
-  white-space: pre-line;
-  z-index: 5;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:22px;
+  white-space:pre-line;
+  text-align:center;
+  z-index:5;
 }
 </style>
 </head>
@@ -57,39 +52,64 @@ video {
 <div id="start">click</div>
 
 <video id="vid" muted loop>
-  <source src="videoplayback (5).mp4" type="video/mp4">
+  <source src="videoplayback (5).mp4">
 </video>
 
 <audio id="audio" loop>
-  <source src="Basement - Covet [Slowed] [TIKTOK VER.].mp3" type="audio/mpeg">
+  <source src="Basement - Covet [Slowed] [TIKTOK VER.].mp3">
 </audio>
 
 <div id="info"></div>
 
 <script>
 const start = document.getElementById("start");
+const info = document.getElementById("info");
 const vid = document.getElementById("vid");
 const audio = document.getElementById("audio");
-const info = document.getElementById("info");
 
-function getGPU() {
+function hash(str){
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h).toString(16);
+}
+
+function canvasFP(){
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  ctx.textBaseline = "top";
+  ctx.font = "14px Arial";
+  ctx.fillText("device_fp_test_123", 2, 2);
+  return hash(c.toDataURL());
+}
+
+function webglFP(){
   try {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl");
+    if(!gl) return "no-webgl";
+
     const debug = gl.getExtension("WEBGL_debug_renderer_info");
-    return debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : "unknown";
+    const vendor = gl.getParameter(gl.VENDOR);
+    const renderer = debug
+      ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)
+      : gl.getParameter(gl.RENDERER);
+
+    return hash(vendor + renderer);
   } catch {
-    return "unknown";
+    return "error";
   }
 }
 
-async function getIP() {
+async function getIP(){
   try {
-    const r = await fetch("https://api.ipify.org?format=json");
-    const d = await r.json();
-    return d.ip;
+    const ip = await fetch("https://api.ipify.org?format=json").then(r=>r.json());
+    const geo = await fetch("https://ipapi.co/json/").then(r=>r.json());
+    return { ip: ip.ip, geo };
   } catch {
-    return "unknown";
+    return { ip:"unknown", geo:{} };
   }
 }
 
@@ -99,31 +119,72 @@ start.onclick = async () => {
   vid.play();
   audio.play();
 
-  const ip = await getIP();
+  const { ip, geo } = await getIP();
 
-  const lines = [
-    "IP: " + ip,
-    "USER AGENT: " + navigator.userAgent,
-    "PLATFORM: " + navigator.platform,
-    "LANG: " + navigator.language,
-    "CPU CORES: " + (navigator.hardwareConcurrency || "unknown"),
-    "SCREEN: " + screen.width + "x" + screen.height,
-    "COLOR DEPTH: " + screen.colorDepth,
-    "GPU: " + getGPU(),
-    "TIMEZONE: " + Intl.DateTimeFormat().resolvedOptions().timeZone,
-    "NETWORK: " + (navigator.connection ? navigator.connection.effectiveType : "unknown")
-  ];
+  const data = {
+    "IP": ip,
+    "Country": geo.country_name || "unknown",
+    "City": geo.city || "unknown",
+    "Region": geo.region || "unknown",
+    "ISP": geo.org || "unknown",
+
+    "User Agent": navigator.userAgent,
+    "Platform": navigator.platform,
+    "Language": navigator.language,
+    "Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+    "CPU Cores": navigator.hardwareConcurrency || "unknown",
+    "Device Memory (GB)": navigator.deviceMemory || "unknown",
+
+    "Screen": screen.width + "x" + screen.height,
+    "Window": innerWidth + "x" + innerHeight,
+    "Pixel Ratio": devicePixelRatio,
+    "Color Depth": screen.colorDepth,
+
+    "GPU": (() => {
+      try {
+        const c = document.createElement("canvas");
+        const gl = c.getContext("webgl");
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        return ext
+          ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
+          : "hidden";
+      } catch {
+        return "unavailable";
+      }
+    })(),
+
+    "Canvas Hash": canvasFP(),
+    "WebGL Hash": webglFP(),
+
+    "WebRTC": !!window.RTCPeerConnection,
+    "WebGL Support": !!window.WebGLRenderingContext,
+    "WebGPU": !!navigator.gpu,
+    "Touch Points": navigator.maxTouchPoints || 0,
+
+    "Storage": [
+      "localStorage" in window ? "localStorage" : null,
+      "sessionStorage" in window ? "sessionStorage" : null,
+      "indexedDB" in window ? "indexedDB" : null
+    ].filter(Boolean).join(", "),
+
+    "Cookies": navigator.cookieEnabled,
+    "Do Not Track": navigator.doNotTrack,
+    "Referrer": document.referrer || "direct",
+
+    "Notifications Permission": Notification.permission
+  };
+
+  const lines = Object.entries(data).map(([k,v]) => `${k}: ${v}`);
 
   let i = 0;
-
-  function show() {
-    if (i < lines.length) {
+  function show(){
+    if(i < lines.length){
       info.textContent += lines[i] + "\n";
       i++;
       setTimeout(show, 500);
     }
   }
-
   show();
 };
 </script>
