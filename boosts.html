@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>⚡ DISCORD BOOSTS ⚡</title>
+  <!-- Font Awesome for icons (cool & mobile friendly) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 20%, #0b0e1a, #03050b);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    /* main card – glassmorphism + neon glow */
+    .boost-card {
+      max-width: 420px;
+      width: 100%;
+      background: rgba(18, 25, 45, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 48px 48px 32px 32px;
+      padding: 28px 22px 38px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(88, 101, 242, 0.2), 0 0 30px rgba(88, 101, 242, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    /* header with discord logo vibe */
+    .header-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .header-icon i {
+      font-size: 2.6rem;
+      color: #5865f2;
+      filter: drop-shadow(0 0 12px #5865f2aa);
+      background: rgba(88, 101, 242, 0.15);
+      padding: 12px;
+      border-radius: 60px;
+      backdrop-filter: blur(4px);
+    }
+
+    .header-icon .badge {
+      background: #23272a;
+      padding: 6px 18px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      color: #b9bbbe;
+      border: 1px solid #40444b;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.05);
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f0f4ff 0%, #b7c5ff 80%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+      margin: 6px 0 4px;
+      text-shadow: 0 0 20px #5865f260;
+      word-break: break-word;
+    }
+
+    .subhead {
+      color: #a0a9c9;
+      font-weight: 500;
+      font-size: 1.05rem;
+      margin-bottom: 28px;
+      letter-spacing: 0.3px;
+      border-bottom: 1px dashed #2f3650;
+      padding-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .subhead i {
+      color: #faa61a;
+      font-size: 1rem;
+    }
+
+    /* boost tier cards – clean mobile grid */
+    .boost-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 24px 0 32px;
+    }
+
+    .boost-item {
+      background: rgba(12, 17, 31, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 40px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #2b3150;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+      transition: 0.15s ease;
+    }
+
+    .boost-item:active {
+      transform: scale(0.97);
+      border-color: #5865f2;
+    }
+
+    .boost-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .boost-emoji {
+      background: #1e233b;
+      width: 48px;
+      height: 48px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: inset 0 0 0 1px #3e4566;
+    }
+
+    .boost-detail {
+      text-align: left;
+    }
+
+    .boost-detail .name {
+      color: #eef2ff;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .boost-detail .name i {
+      color: #faa61a;
+      font-size: 0.8rem;
+    }
+
+    .boost-detail .price {
+      color: #9aa3c9;
+      font-weight: 500;
+      font-size: 0.95rem;
+      background: #181f33;
+      padding: 2px 14px;
+      border-radius: 30px;
+      display: inline-block;
+      margin-top: 4px;
+      border: 1px solid #2d3557;
+    }
+
+    .boost-badge {
+      background: #5865f2;
+      color: white;
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 60px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: linear-gradient(145deg, #4e5bd9, #3b47b0);
+      box-shadow: 0 0 14px #5865f270;
+    }
+
+    /* big CTA button */
+    .buy-btn {
+      background: linear-gradient(145deg, #5865f2, #4752c4);
+      border: none;
+      width: 100%;
+      padding: 20px 16px;
+      border-radius: 80px;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      box-shadow: 0 12px 28px rgba(88, 101, 242, 0.5), 0 0 0 1px #7380f5 inset;
+      transition: all 0.15s ease;
+      margin: 12px 0 8px;
+      letter-spacing: 0.8px;
+      text-shadow: 0 2px 4px #1f2870;
+      cursor: pointer;
+    }
+
+    .buy-btn i {
+      font-size: 2rem;
+      color: #ffffffdd;
+      filter: drop-shadow(0 0 6px #b3c0ff);
+    }
+
+    .buy-btn:active {
+      transform: scale(0.96);
+      background: linear-gradient(145deg, #4a56d6, #3b45ad);
+      box-shadow: 0 6px 16px #5865f280;
+    }
+
+    /* cash tag highlight */
+    .cash-tag {
+      margin-top: 22px;
+      background: #0f1427;
+      padding: 12px 10px;
+      border-radius: 100px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid #2f3a66;
+      backdrop-filter: blur(8px);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #c4ceff;
+      padding: 12px 24px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 0 20px #5865f230;
+    }
+
+    .cash-tag i {
+      color: #00d632;
+      font-size: 1.6rem;
+      filter: drop-shadow(0 0 8px #00d63270);
+    }
+
+    .cash-tag span {
+      background: #1b2340;
+      padding: 4px 18px;
+      border-radius: 60px;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      color: #eef4ff;
+      border: 1px solid #3b457a;
+    }
+
+    .fine-print {
+      margin-top: 24px;
+      color: #5a6490;
+      font-size: 0.75rem;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      letter-spacing: 0.4px;
+    }
+
+    .fine-print i {
+      margin-right: 5px;
+      color: #6b78b0;
+    }
+
+    /* responsive tweaks */
+    @media (max-width: 400px) {
+      .boost-card {
+        padding: 20px 14px 28px;
+        border-radius: 36px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      .buy-btn {
+        font-size: 1.5rem;
+        padding: 18px 12px;
+      }
+      .boost-item {
+        padding: 12px 14px;
+      }
+      .cash-tag {
+        font-size: 0.95rem;
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
+    /* cool glow pulse on cash tag */
+    @keyframes softPulse {
+      0% { box-shadow: 0 0 8px #5865f240; }
+      50% { box-shadow: 0 0 28px #5865f280, 0 0 60px #5865f230; }
+      100% { box-shadow: 0 0 8px #5865f240; }
+    }
+    .cash-tag {
+      animation: softPulse 3s infinite ease-in-out;
+    }
+
+    /* extra shimmer for button */
+    .buy-btn {
+      position: relative;
+      overflow: hidden;
+    }
+    .buy-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="boost-card" role="main">
+
+    <!-- header -->
+    <div class="header-icon">
+      <i class="fab fa-discord"></i>
+      <span class="badge"><i class="fas fa-bolt" style="margin-right: 6px;"></i>LIVE</span>
+    </div>
+    <h1>BOOST <span style="background: linear-gradient(145deg,#b7c5ff, #7b8cf0); -webkit-background-clip: text; background-clip: text; color: transparent;">PACK</span></h1>
+    <div class="subhead">
+      <i class="fas fa-crown"></i>  instant delivery · nitro style
+      <i class="fas fa-rocket" style="margin-left: 6px;"></i>
+    </div>
+
+    <!-- boost tiers (visual only, all link to same cash tag) -->
+    <div class="boost-grid">
+      <div class="boost-item">
+        <div class="boost-info">
+          <div class="boost-emoji">🚀</div>
+          <div class="boost-detail">
+            <div class="name">Level 1 <i class="fas fa-check-circle" style="color: #4caf50; font-size: 0.7rem;"></i></div>
+            <span class="price">$5.99</span>
+          </div>
+        </div>
+        <span class="boost-badge">boost</span>
+      </div>
+
+      <div class="boost-item">
+        <div class="boost-info">
+          <div class="boost-emoji">⚡</div>
+          <div class="boost-detail">
+            <div class="name">Level 2 <i class="fas fa-star" style="color: #faa61a; font-size: 0.7rem;"></i></div>
+            <span class="price">$12.99</span>
+          </div>
+        </div>
+        <span class="boost-badge" style="background: linear-gradient(145deg,#faa61a, #d4890f);">pop</span>
+      </div>
+
+      <div class="boost-item">
+        <div class="boost-info">
+          <div class="boost-emoji">👑</div>
+          <div class="boost-detail">
+            <div class="name">Level 3 <i class="fas fa-gem" style="color: #b48aff; font-size: 0.7rem;"></i></div>
+            <span class="price">$24.99</span>
+          </div>
+        </div>
+        <span class="boost-badge" style="background: linear-gradient(145deg,#b48aff, #7d5fd0);">elite</span>
+      </div>
+    </div>
+
+    <!-- BIG BUY BUTTON – links to Cash App $qwelver -->
+    <a href="https://cash.app/$qwelver" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: block;">
+      <button class="buy-btn" aria-label="Buy Discord boost with Cash App">
+        <i class="fab fa-bitcoin"></i> BUY NOW
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </a>
+
+    <!-- cash tag display (explicit) -->
+    <div class="cash-tag">
+      <i class="fas fa-dollar-sign"></i>
+      <span>$qwelver</span>
+      <i class="fas fa-qrcode" style="color: #9aa9ff; font-size: 1.2rem;"></i>
+    </div>
+
+    <!-- extra info -->
+    <div class="fine-print">
+      <span><i class="fas fa-bolt"></i> instant</span>
+      <span><i class="fas fa-shield-alt"></i> secure</span>
+      <span><i class="fas fa-mobile-alt"></i> mobile ready</span>
+    </div>
+    <div style="margin-top: 12px; color: #3d4670; font-size: 0.6rem; letter-spacing: 0.6px;">
+      <i class="fas fa-lock" style="margin-right: 4px;"></i> powered by Cash App
+    </div>
+  </div>
+</body>
+</html>
