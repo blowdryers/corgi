@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proxy Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #output { margin-top: 20px; padding: 10px; border-radius: 5px; background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Proxy Viewer</h1>
+    <!-- Added the id="proxy" to the form so the JavaScript can find it -->
+    <form id="proxy"> 
+        <input type="text" id="url" placeholder="Enter URL...">
+        <button type="submit">View Page</button>
+    </form>
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('proxy').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let url = document.getElementById('url').value;
+            
+            // Fixed the template literal structure
+            fetch(`http://exopss.lol{url}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then((html) => {
+                    document.getElementById('output').innerHTML = html;
+                })
+                .catch((error) => {
+                    alert(`Error: ${error.message}`);
+                });
+        });
+    </script>
+</body>
+</html>
