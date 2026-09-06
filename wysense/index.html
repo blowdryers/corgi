@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>wysense</title>
+<style>
+  :root {
+    --mint: #4df58a;
+    --mint-dim: rgba(77, 245, 138, 0.4);
+    --mint-faint: rgba(77, 245, 138, 0.12);
+    --bg: #050505;
+    --titlebar: #0a0a0a;
+    --surface: #0e0e0e;
+    --panel: #111;
+    --panel-alt: #141414;
+    --text: #eaeaea;
+    --muted: #6d6d6d;
+    --muted2: #8a8a8a;
+    --gold: #e8c44a;
+    --red: #8c1414;
+    --red-hi: #b01c1c;
+    --border: 1px solid var(--mint-dim);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: "ProggyClean", "ProggySquare", "Fixedsys Excelsior", "Consolas", "Courier New", monospace;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .app {
+    max-width: 560px;
+    min-height: 100dvh;
+    margin: 0 auto;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(255,255,255,0.04);
+    border-right: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* ---------- title bar ---------- */
+  .titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--titlebar);
+    padding: 8px 10px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  .titlebar .win-title {
+    color: #fff;
+  }
+
+  .close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+
+  .close:active {
+    color: #ff5f56;
+  }
+
+  /* ---------- app header ---------- */
+  .appheader {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: start;
+    gap: 14px;
+    padding: 18px 20px 10px;
+  }
+
+  .appheader .appname {
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .appheader .userid {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .appheader .userid span {
+    color: var(--muted2);
+  }
+
+  .appheader .version {
+    font-size: 12px;
+    color: var(--muted);
+    padding-top: 3px;
+    white-space: nowrap;
+  }
+
+  .appheader .version b {
+    color: var(--muted2);
+    font-weight: normal;
+    margin: 0 6px;
+  }
+
+  .status-ready {
+    font-size: 12px;
+    color: var(--mint);
+    padding-top: 3px;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 4px 20px 0;
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    padding: 8px 6px 7px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab.active {
+    color: var(--mint);
+    border-bottom-color: var(--mint);
+  }
+
+  /* ---------- divider ---------- */
+  .divider {
+    height: 1px;
+    background: var(--mint-dim);
+    margin: 0 20px 16px;
+  }
+
+  /* ---------- content ---------- */
+  .content {
+    flex: 1;
+    padding: 0 20px;
+  }
+
+  .panel {
+    border: var(--border);
+    background: var(--panel);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .panel h2 {
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--mint);
+    letter-spacing: 0.5px;
+  }
+
+  .panel .sub {
+    font-size: 13px;
+    color: var(--muted2);
+    margin: 8px 0 18px;
+  }
+
+  /* mode selection */
+  .mode-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .mode {
+    flex: 1;
+    background: var(--panel-alt);
+    border: 1px solid #2a2a2a;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 14px 10px;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  .mode.selected {
+    background: var(--mint-faint);
+    border: 1px solid var(--mint);
+    color: var(--mint);
+  }
+
+  .mode.selected .rec {
+    color: var(--mint);
+    opacity: 0.75;
+  }
+
+  .modesmall {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .status-load {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .loadbtn {
+    width: 100%;
+    background: var(--mint);
+    border: none;
+    color: #052012;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 18px 0;
+    cursor: pointer;
+  }
+
+  .loadbtn:active {
+    filter: brightness(0.85);
+  }
+
+  /* notes under panel */
+  .notes {
+    padding: 0 20px 4px;
+  }
+
+  .notes p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+
+  /* bottom buttons */
+  .bottom-bar {
+    margin-top: 18px;
+    padding-bottom: 22px;
+  }
+
+  .bottom-bar .row {
+    display: flex;
+    gap: 12px;
+    padding: 0 20px;
+  }
+
+  .bottom-actions {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid #262626;
+    color: #cfcfcf;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 12px 0;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .bottom-actions:active {
+    border-color: var(--mint-dim);
+    color: var(--mint);
+  }
+
+  /* ---------- utilities ---------- */
+  .panelhead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .panelhead .count {
+    font-size: 12px;
+    color: var(--gold);
+  }
+
+  .killbtn {
+    width: 100%;
+    background: var(--red);
+    border: 1px solid var(--red-hi);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    padding: 22px 0;
+    cursor: pointer;
+  }
+
+  .killbtn:active {
+    filter: brightness(1.25);
+  }
+
+  .dropdown {
+    position: relative;
+    background: var(--panel-alt);
+    border: 1px solid #2a2a2a;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .dropdown .arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-60%);
+    color: var(--muted2);
+    font-size: 10px;
+  }
+
+  .btnrow {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btnrow button {
+    flex: 1;
+    background: var(--panel-alt);
+    border: 1px solid #2a2a2a;
+    color: #cfcfcf;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 12px 0;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .btnrow button:active {
+    border-color: var(--mint-dim);
+    color: var(--mint);
+  }
+
+  .pane {
+    display: none;
+    flex-direction: column;
+  }
+
+  .pane.active {
+    display: flex;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- title bar -->
+  <div class="titlebar">
+    <span class="win-title">wysense</span>
+    <button class="close" aria-label="close">x</button>
+  </div>
+
+  <!-- app header -->
+  <div class="appheader">
+    <div>
+      <div class="appname">wysense</div>
+      <div class="userid">faggot <span>(UID 59)</span></div>
+    </div>
+    <div class="version">1.0.13&nbsp;<b>|</b>&nbsp;build 28</div>
+    <div class="status-ready">ready</div>
+  </div>
+
+  <!-- nav tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="launch">launch</button>
+    <button class="tab" data-tab="utilities">utilities</button>
+  </nav>
+  <div class="divider"></div>
+
+  <!-- content -->
+  <div class="content">
+
+    <!-- launch pane -->
+    <div class="pane active" id="pane-launch">
+      <div class="panel">
+        <h2>memory access</h2>
+        <p class="sub">choose how Wysense loads</p>
+
+        <div class="mode-row">
+          <button class="mode selected" id="modeUser">
+            user mode <span class="rec">(recommended)</span>
+            <span class="modesmall">runs alongside your game</span>
+          </button>
+          <button class="mode" id="modeKernel">
+            kernel mode
+            <span class="modesmall">higher access required</span>
+          </button>
+        </div>
+
+        <p class="status-load">ready to load</p>
+        <button class="loadbtn" id="loadBtn">load wysense</button>
+      </div>
+
+      <div class="notes">
+        <p>recommended for most systems</p>
+        <p>focus your game after loading</p>
+      </div>
+
+      <div class="bottom-bar">
+        <div class="row">
+          <button class="bottom-actions">account</button>
+          <button class="bottom-actions">sign out</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- utilities pane -->
+    <div class="pane" id="pane-utilities">
+      <div class="panel">
+        <div class="panelhead">
+          <h2>roblox process</h2>
+          <span class="count">1 process</span>
+        </div>
+        <p class="sub">end RobloxPlayerBeta.exe processes</p>
+        <button class="killbtn" id="killBtn">kill roblox</button>
+      </div>
+
+      <div class="panel">
+        <div class="panelhead">
+          <h2>version manager</h2>
+          <span class="count">1 installed</span>
+        </div>
+        <p class="sub">browse the Roblox clients installed on this PC</p>
+
+        <div class="dropdown">
+          version-e7d81637d42c4b23
+          <span class="arrow">&#9660;</span>
+        </div>
+
+        <div class="btnrow">
+          <button>copy id</button>
+          <button>open folder</button>
+          <button>refresh</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    var tabs = document.querySelectorAll('.tab');
+    var panes = {
+      launch: document.getElementById('pane-launch'),
+      utilities: document.getElementById('pane-utilities')
+    };
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+
+        Object.keys(panes).forEach(function (key) {
+          panes[key].classList.toggle('active', key === tab.dataset.tab);
+        });
+      });
+    });
+
+    var loadBtn = document.getElementById('loadBtn');
+    loadBtn.addEventListener('click', function () {
+      loadBtn.textContent = 'loading wysense...';
+      setTimeout(function () { loadBtn.textContent = 'load wysense'; }, 900);
+    });
+
+    var userMode = document.getElementById('modeUser');
+    var kernelMode = document.getElementById('modeKernel');
+    [userMode, kernelMode].forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        userMode.classList.toggle('selected', btn === userMode);
+        kernelMode.classList.toggle('selected', btn === kernelMode);
+      });
+    });
+
+    var killBtn = document.getElementById('killBtn');
+    killBtn.addEventListener('click', function () {
+      killBtn.textContent = 'killed...';
+      setTimeout(function () { killBtn.textContent = 'kill roblox'; }, 900);
+    });
+  })();
+</script>
+
+</body>
+</html>
