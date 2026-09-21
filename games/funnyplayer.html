@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Browser Guitar Hero</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#10131b;color:#eee;font:15px system-ui;text-align:center}
+main{max-width:900px;margin:auto;padding:18px}input,button{padding:11px;border:0;border-radius:6px;margin:4px}
+input{width:min(600px,80vw)}button{background:#19c37d;color:#06120d;font-weight:bold;cursor:pointer}
+#results{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px}
+.card{background:#202532;padding:10px;width:210px;text-align:left;border-radius:8px}
+.card img{width:55px;height:55px;object-fit:cover;float:left;margin-right:8px}
+small{color:#aab3c4}.hide{display:none}#game{position:relative;background:#090b10;height:520px;overflow:hidden;margin:15px auto;max-width:600px}
+.lane{position:absolute;bottom:0;width:25%;height:100%;border-left:1px solid #333}
+.lane:nth-child(1){left:0}.lane:nth-child(2){left:25%}.lane:nth-child(3){left:50%}.lane:nth-child(4){left:75%}
+.hit{position:absolute;bottom:55px;width:100%;height:5px;background:#fff;opacity:.8}
+.note{position:absolute;width:42px;height:42px;border-radius:50%;transform:translateX(-50%);left:50%;box-shadow:0 0 12px currentColor}
+#score{font-size:20px;color:#ffd166}audio{width:min(600px,90vw)}
+</style>
+</head>
+<body>
+<main>
+<h1>Mini Guitar Hero</h1>
+<input id="q" placeholder="Song, artist, or both">
+<button onclick="search()">Search 10 APIs</button>
+<br>
+<label>Local audio: <input id="file" type="file" accept="audio/*"></label>
+<div id="status"></div><div id="results"></div>
+<audio id="audio" controls></audio>
+<p><button onclick="start()">Generate / Start Chart</button>
+<button onclick="stop()">Stop</button></p>
+<div id="score">Score: 0 | Combo: 0</div>
+<div id="game">
+ <div class="lane"><div class="hit"></div></div><div class="lane"><div class="hit"></div></div>
+ <div class="lane"><div class="hit"></div></div><div class="lane"><div class="hit"></div></div>
+</div>
+<p>Use A S D F, or tap/click lanes. Hit notes when they reach the white line.</p>
+</main>
+<script>
+const $=x=>document.querySelector(x), colors=['#ff477e','#ffd166','#06d6a0','#4cc9f0'];
+let notes=[],running=0,score=0,combo=0,selected=null,blob=null;
+const enc=encodeURIComponent;
+function json(url){return fetch(url).then(r=>r.ok?r.json():null).catch(()=>null)}
+function add(a,source,title,artist,art,preview){
+ if(!title)return;
+ let k=(title+' '+artist).toLowerCase();
+ if(!window.seen.has(k)){window.seen.add(k);window.out.push({source,title,artist:artist||'',art,preview})}
+}
+async function search(){
+ let q=$('#q').value.trim();if(!q)return;
+ $('#status').textContent='Searching…';$('#results').innerHTML='';
+ window.seen=new Set;window.out=[];
+ let e=enc(q),artist=enc(q.split(/[-–]/)[0].trim()),title=enc(q.split(/[-–]/).slice(1).join(' ').trim()||q);
+ let jobs=[
+  json('https://itunes.apple.com/search?term='+e+'&entity=song&limit=8'),
+  json('https://api.deezer.com/search?q='+e+'&limit=8'),
+  json('https://musicbrainz.org/ws/2/recording/?query='+e+'&fmt=json&limit=8'),
+  json('https://saavn.dev/api/search/songs?query='+e+'&limit=8'),
+  json('https://lrclib.net/api/search?q='+e),
+  json('https://api.lyrics.ovh/suggest/'+e),
+  json('https://api.audius.co/v1/tracks/search?query='+e+'&limit=8'),
+  json('https://api.openwhyd.org/1/search?q='+e),
+  json('https://api.jiosaavn.com/search/song?query='+e),
+  json('https://api.song.link/v1-alpha.1/search?query='+e)
+ ];
+ let [it,de,mb,sj,lr,lo,au,ow,ji,sl]=await Promise.all(jobs);
+ (it?.results||[]).forEach(x=>add(x,'iTunes',x.trackName,x.artistName,x.artworkUrl100,x.previewUrl));
+ (de?.data||[]).forEach(x=>add(x,'Deezer',x.title,x.artist?.name,x.album?.cover_medium,x.preview));
+ (mb?.recordings||[]).forEach(x=>add(x,'MusicBrainz',x.title,x['artist-credit']?.map(a=>a.name).join(', ')));
+ (sj?.data?.results||sj?.data?.songs?.results||[]).forEach(x=>add(x,'JioSaavn',x.name,x.primaryArtists,x.image?.[1]?.url,x.downloadUrl?.[0]?.url));
+ (lr||[]).forEach(x=>add(x,'LRCLIB',x.trackName,x.artistName));
+ (lo?.data||[]).forEach(x=>add(x,'Lyrics.ovh',x.title,x.artist,x.album?.cover));
+ (au?.data||[]).forEach(x=>add(x,'Audius',x.title,x.user?.name,null));
+ (ow?.tracks||ow||[]).forEach(x=>add(x,'Openwhyd',x.name,x.e||x.u));
+ (ji?.data?.results||[]).forEach(x=>add(x,'JioSaavn',x.title,x.more_info?.singers,x.image?.[1]?.link));
+ $('#status').textContent=out.length+' results found. Click one to select it.';
+ $('#results').innerHTML=out.map((x,i)=>`<div class="card" onclick="pick(${i})">
+ ${x.art?`<img src="${x.art}" onerror="this.style.display='none'">`:''}
+ <b>${esc(x.title)}</b><br><small>${esc(x.artist)}<br>${x.source}</small></div>`).join('');
+}
+function esc(x){return String(x||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function pick(i){
+ selected=out[i];$('#status').textContent=selected.title+' — '+selected.artist;
+ if(selected.preview){$('#audio').src=selected.preview;$('#audio').load()}
+}
+$('#file').onchange=e=>{
+ blob=URL.createObjectURL(e.target.files[0]);$('#audio').src=blob;
+ $('#status').textContent='Local audio loaded';
+};
+function makeChart(){
+ let dur=$('#audio').duration;
+ if(!isFinite(dur)||dur<1)dur=120;
+ notes=[];let step=.5;
+ for(let t=2;t<dur-1;t+=step){
+  if(Math.random()<.58)notes.push({t,lane:Math.floor(Math.random()*4),hit:0});
+  if(Math.random()<.12)notes.push({t:t+.25,lane:Math.floor(Math.random()*4),hit:0});
+ }
+}
+function start(){
+ stop();makeChart();score=combo=0;update();
+ running=1;$('#audio').currentTime=0;$('#audio').play().catch(()=>{});
+ requestAnimationFrame(loop);
+}
+function stop(){running=0;document.querySelectorAll('.note').forEach(x=>x.remove());$('#audio').pause()}
+function loop(){
+ if(!running)return;
+ let now=$('#audio').currentTime;
+ document.querySelectorAll('.note').forEach(x=>x.remove());
+ notes.forEach(n=>{
+  let d=n.t-now;if(d>-1.8&&d<3){
+   let x=document.createElement('div');x.className='note';x.style.color=colors[n.lane];
+   x.style.left=(n.lane*25+12.5)+'%';x.style.bottom=(55+d*170)+'px';x.dataset.i=notes.indexOf(n);
+   $('#game').append(x);
+  }
+ });
+ if(now>Math.max(...notes.map(n=>n.t))+3)stop();else requestAnimationFrame(loop);
+}
+function hit(l){
+ if(!running)return;
+ let now=$('#audio').currentTime,best=null,bd=.16;
+ notes.forEach((n,i)=>{let d=Math.abs(n.t-now);if(!n.hit&&n.lane==l&&d<bd){bd=d;best=n}});
+ if(best){best.hit=1;score+=100+combo*10;combo++}else combo=0;update()
+}
+function update(){$('#score').textContent='Score: '+score+' | Combo: '+combo}
+onkeydown=e=>{let k='asdf'.indexOf(e.key.toLowerCase());if(k>=0)hit(k)}
+document.querySelectorAll('.lane').forEach((x,i)=>x.onclick=()=>hit(i));
+</script>
+</body>
+</html>
