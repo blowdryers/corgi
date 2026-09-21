@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Peggle Clone</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -14,8 +15,7 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      background:
-        radial-gradient(circle at top, #273b73, #11182e 70%);
+      background: radial-gradient(circle at top, #273b73, #11182e 70%);
       color: white;
       font-family: system-ui, sans-serif;
     }
@@ -39,7 +39,7 @@
       margin-bottom: 10px;
       padding: 10px 15px;
       border-radius: 12px;
-      background: rgba(0, 0, 0, .3);
+      background: rgba(0, 0, 0, 0.3);
       font-weight: 700;
     }
 
@@ -50,7 +50,7 @@
       border: 4px solid #6c5ce7;
       border-radius: 16px;
       background: #172348;
-      box-shadow: 0 12px 35px rgba(0, 0, 0, .4);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
       cursor: crosshair;
     }
 
@@ -77,6 +77,7 @@
     }
   </style>
 </head>
+
 <body>
   <main class="game-wrap">
     <h1>PEGGLE</h1>
@@ -84,13 +85,16 @@
     <div class="hud">
       <span>Score: <b id="score">0</b></span>
       <span>Pegs left: <b id="left">0</b></span>
-      <span>Balls: <b id="balls">10</b></span>
+      <span>Balls: <b id="balls">∞</b></span>
     </div>
 
     <canvas id="game" width="720" height="820"></canvas>
 
     <button id="restart">Restart Game</button>
-    <div class="help">Move the mouse to aim. Click or press Space to fire.</div>
+
+    <div class="help">
+      Move the mouse to aim. Click to fire. Hold Space for 0.5 seconds to rapid-fire.
+    </div>
   </main>
 
   <script>
@@ -111,18 +115,21 @@
       angle: Math.PI / 2
     };
 
-    let pegs = [];
-    let balls = [];
-    let particles = [];
-    let score = 0;
-    let ballsLeft = 10;
-    let activeBall = false;
-    let gameOver = false;
-    let message = "";
-
     const gravity = 0.22;
     const ballRadius = 9;
     const pegRadius = 17;
+
+    let pegs = [];
+    let balls = [];
+    let particles = [];
+
+    let score = 0;
+    let gameOver = false;
+    let message = "";
+
+    let spaceHeld = false;
+    let rapidFireTimer = null;
+    let spaceHoldTimer = null;
 
     function makeLevel() {
       pegs = [];
@@ -147,27 +154,35 @@
         }
       }
 
-      // A few guaranteed orange pegs
-      pegs[3].color = "orange";
-      pegs[pegs.length - 4].color = "orange";
+      // Guarantee that some orange pegs exist
+      if (pegs.length > 3) {
+        pegs[3].color = "orange";
+        pegs[pegs.length - 4].color = "orange";
+      }
     }
 
     function resetGame() {
+      clearTimeout(spaceHoldTimer);
+      clearInterval(rapidFireTimer);
+
+      spaceHeld = false;
+      rapidFireTimer = null;
+      spaceHoldTimer = null;
+
       score = 0;
-      ballsLeft = 10;
       balls = [];
       particles = [];
-      activeBall = false;
       gameOver = false;
       message = "";
+
       makeLevel();
       updateHud();
     }
 
     function updateHud() {
       scoreEl.textContent = score;
-      leftEl.textContent = pegs.filter(p => p.active).length;
-      ballsEl.textContent = ballsLeft;
+      leftEl.textContent = pegs.filter(peg => peg.active).length;
+      ballsEl.textContent = "∞";
     }
 
     function getMousePosition(event) {
@@ -182,7 +197,7 @@
     function aimAt(x, y) {
       shooter.angle = Math.atan2(y - shooter.y, x - shooter.x);
 
-      // Prevent shooting downward or almost horizontally
+      // Keep the cannon aimed mostly downward
       shooter.angle = Math.max(
         0.22,
         Math.min(Math.PI - 0.22, shooter.angle)
@@ -190,7 +205,7 @@
     }
 
     function shoot() {
-      if (activeBall || ballsLeft <= 0 || gameOver) return;
+      if (gameOver) return;
 
       const speed = 9;
 
@@ -201,16 +216,6 @@
         vy: Math.sin(shooter.angle) * speed,
         life: 0
       });
-
-      ballsLeft--;
-      activeBall = true;
-      updateHud();
-    }
-
-    function circleHit(a, b, radius) {
-      const dx = a.x - b.x;
-      const dy = a.y - b.y;
-      return dx * dx + dy * dy < radius * radius;
     }
 
     function hitPeg(ball, peg) {
@@ -227,22 +232,23 @@
         ball.x = peg.x + nx * minDistance;
         ball.y = peg.y + ny * minDistance;
 
-        // Reflect velocity along the collision normal
+        // Reflect velocity
         const dot = ball.vx * nx + ball.vy * ny;
+
         ball.vx -= 2 * dot * nx;
         ball.vy -= 2 * dot * ny;
 
-        // Add some energy loss
         ball.vx *= 0.94;
         ball.vy *= 0.94;
 
         peg.active = false;
+
         score += peg.color === "orange" ? 100 : 25;
 
         burst(peg.x, peg.y, peg.color);
         updateHud();
 
-        if (pegs.every(p => !p.active)) {
+        if (pegs.every(peg => !peg.active)) {
           gameOver = true;
           message = "LEVEL CLEARED!";
         }
@@ -256,12 +262,13 @@
       ball.x += ball.vx;
       ball.y += ball.vy;
 
-      // Side walls
+      // Left wall
       if (ball.x - ballRadius < 0) {
         ball.x = ballRadius;
         ball.vx *= -0.85;
       }
 
+      // Right wall
       if (ball.x + ballRadius > W) {
         ball.x = W - ballRadius;
         ball.vx *= -0.85;
@@ -286,17 +293,8 @@
           updateBall(ball);
         }
 
-        // Remove balls that leave the bottom
-        balls = balls.filter(ball => ball.y < H + 50);
-
-        if (activeBall && balls.length === 0) {
-          activeBall = false;
-
-          if (ballsLeft === 0 && pegs.some(p => p.active)) {
-            gameOver = true;
-            message = "GAME OVER";
-          }
-        }
+        // Remove balls after they fall below the screen
+        balls = balls.filter(ball => ball.y < H + 60);
       }
 
       updateParticles();
@@ -304,18 +302,20 @@
 
     function drawBackground() {
       const gradient = ctx.createLinearGradient(0, 0, 0, H);
+
       gradient.addColorStop(0, "#24366c");
       gradient.addColorStop(1, "#0d1530");
 
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, W, H);
 
-      // Decorative stars
-      ctx.fillStyle = "rgba(255,255,255,.35)";
+      // Stars
+      ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
 
       for (let i = 0; i < 45; i++) {
         const x = (i * 137) % W;
         const y = 80 + ((i * 83) % 700);
+
         ctx.fillRect(x, y, 2, 2);
       }
     }
@@ -330,6 +330,7 @@
       ctx.lineWidth = 13;
       ctx.lineCap = "round";
       ctx.strokeStyle = "#f5f7ff";
+
       ctx.beginPath();
       ctx.moveTo(shooter.x, shooter.y);
       ctx.lineTo(endX, endY);
@@ -351,10 +352,15 @@
       for (const peg of pegs) {
         if (!peg.active) continue;
 
-        ctx.save();
+        const color = peg.color === "orange"
+          ? "#ff7b22"
+          : "#4cc9f0";
 
-        const color = peg.color === "orange" ? "#ff7b22" : "#4cc9f0";
-        const highlight = peg.color === "orange" ? "#ffd166" : "#b8f2ff";
+        const highlight = peg.color === "orange"
+          ? "#ffd166"
+          : "#b8f2ff";
+
+        ctx.save();
 
         ctx.shadowColor = color;
         ctx.shadowBlur = 12;
@@ -365,8 +371,9 @@
         ctx.fill();
 
         ctx.shadowBlur = 0;
-        ctx.fillStyle = highlight;
         ctx.globalAlpha = 0.8;
+        ctx.fillStyle = highlight;
+
         ctx.beginPath();
         ctx.arc(peg.x - 6, peg.y - 6, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -396,6 +403,7 @@
         gradient.addColorStop(1, "#ff8c42");
 
         ctx.fillStyle = gradient;
+
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
         ctx.fill();
@@ -405,11 +413,19 @@
     }
 
     function drawParticles() {
-      for (const p of particles) {
-        ctx.globalAlpha = p.life / p.maxLife;
-        ctx.fillStyle = p.color;
+      for (const particle of particles) {
+        ctx.globalAlpha = particle.life / particle.maxLife;
+        ctx.fillStyle = particle.color;
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(
+          particle.x,
+          particle.y,
+          particle.size,
+          0,
+          Math.PI * 2
+        );
+
         ctx.fill();
       }
 
@@ -420,27 +436,25 @@
       if (!message) return;
 
       ctx.save();
-      ctx.fillStyle = "rgba(0, 0, 0, .65)";
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
       ctx.fillRect(0, H / 2 - 70, W, 140);
 
       ctx.textAlign = "center";
+
       ctx.fillStyle = "#ffd166";
       ctx.font = "bold 42px system-ui";
       ctx.fillText(message, W / 2, H / 2);
 
       ctx.fillStyle = "white";
       ctx.font = "18px system-ui";
-      ctx.fillText("Press Restart Game to play again", W / 2, H / 2 + 38);
-      ctx.restore();
-    }
+      ctx.fillText(
+        "Press Restart Game to play again",
+        W / 2,
+        H / 2 + 38
+      );
 
-    function draw() {
-      drawBackground();
-      drawPegs();
-      drawShooter();
-      drawBalls();
-      drawParticles();
-      drawMessage();
+      ctx.restore();
     }
 
     function burst(x, y, color) {
@@ -462,14 +476,16 @@
     }
 
     function updateParticles() {
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.08;
-        p.life++;
+      for (const particle of particles) {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.vy += 0.08;
+        particle.life++;
       }
 
-      particles = particles.filter(p => p.life < p.maxLife);
+      particles = particles.filter(
+        particle => particle.life < particle.maxLife
+      );
     }
 
     canvas.addEventListener("mousemove", event => {
@@ -480,10 +496,44 @@
     canvas.addEventListener("click", shoot);
 
     document.addEventListener("keydown", event => {
-      if (event.code === "Space") {
-        event.preventDefault();
-        shoot();
-      }
+      if (event.code !== "Space") return;
+      if (event.repeat || spaceHeld) return;
+
+      event.preventDefault();
+
+      spaceHeld = true;
+
+      // Fire immediately when Space is pressed
+      shoot();
+
+      // Wait 0.5 seconds before starting rapid-fire
+      spaceHoldTimer = setTimeout(() => {
+        if (!spaceHeld) return;
+
+        /*
+          JavaScript cannot truly run every 0.00001 seconds.
+          The browser runs this as fast as its timer and event loop allow.
+        */
+        rapidFireTimer = setInterval(() => {
+          if (spaceHeld && !gameOver) {
+            shoot();
+          }
+        }, 1);
+      }, 500);
+    });
+
+    document.addEventListener("keyup", event => {
+      if (event.code !== "Space") return;
+
+      event.preventDefault();
+
+      spaceHeld = false;
+
+      clearTimeout(spaceHoldTimer);
+      clearInterval(rapidFireTimer);
+
+      spaceHoldTimer = null;
+      rapidFireTimer = null;
     });
 
     restartBtn.addEventListener("click", resetGame);
@@ -491,6 +541,7 @@
     function gameLoop() {
       update();
       draw();
+
       requestAnimationFrame(gameLoop);
     }
 
