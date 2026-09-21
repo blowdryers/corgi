@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peggle Clone</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top, #273b73, #11182e 70%);
+      color: white;
+      font-family: system-ui, sans-serif;
+    }
+
+    .game-wrap {
+      width: min(94vw, 760px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      letter-spacing: 3px;
+      color: #ffd166;
+      text-shadow: 0 3px #a44d8f;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, .3);
+      font-weight: 700;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 4px solid #6c5ce7;
+      border-radius: 16px;
+      background: #172348;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, .4);
+      cursor: crosshair;
+    }
+
+    button {
+      margin-top: 12px;
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 20px;
+      background: #ff6b6b;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #ff8787;
+    }
+
+    .help {
+      margin-top: 8px;
+      color: #c9d4ff;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main class="game-wrap">
+    <h1>PEGGLE</h1>
+
+    <div class="hud">
+      <span>Score: <b id="score">0</b></span>
+      <span>Pegs left: <b id="left">0</b></span>
+      <span>Balls: <b id="balls">10</b></span>
+    </div>
+
+    <canvas id="game" width="720" height="820"></canvas>
+
+    <button id="restart">Restart Game</button>
+    <div class="help">Move the mouse to aim. Click or press Space to fire.</div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("score");
+    const leftEl = document.getElementById("left");
+    const ballsEl = document.getElementById("balls");
+    const restartBtn = document.getElementById("restart");
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const shooter = {
+      x: W / 2,
+      y: 48,
+      angle: Math.PI / 2
+    };
+
+    let pegs = [];
+    let balls = [];
+    let particles = [];
+    let score = 0;
+    let ballsLeft = 10;
+    let activeBall = false;
+    let gameOver = false;
+    let message = "";
+
+    const gravity = 0.22;
+    const ballRadius = 9;
+    const pegRadius = 17;
+
+    function makeLevel() {
+      pegs = [];
+
+      const rows = 8;
+      const cols = 8;
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const offset = row % 2 ? 45 : 0;
+          const x = 70 + col * 84 + offset;
+          const y = 145 + row * 72;
+
+          if (x < W - 35 && Math.random() > 0.08) {
+            pegs.push({
+              x,
+              y,
+              active: true,
+              color: Math.random() < 0.2 ? "orange" : "blue"
+            });
+          }
+        }
+      }
+
+      // A few guaranteed orange pegs
+      pegs[3].color = "orange";
+      pegs[pegs.length - 4].color = "orange";
+    }
+
+    function resetGame() {
+      score = 0;
+      ballsLeft = 10;
+      balls = [];
+      particles = [];
+      activeBall = false;
+      gameOver = false;
+      message = "";
+      makeLevel();
+      updateHud();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      leftEl.textContent = pegs.filter(p => p.active).length;
+      ballsEl.textContent = ballsLeft;
+    }
+
+    function getMousePosition(event) {
+      const rect = canvas.getBoundingClientRect();
+
+      return {
+        x: (event.clientX - rect.left) * W / rect.width,
+        y: (event.clientY - rect.top) * H / rect.height
+      };
+    }
+
+    function aimAt(x, y) {
+      shooter.angle = Math.atan2(y - shooter.y, x - shooter.x);
+
+      // Prevent shooting downward or almost horizontally
+      shooter.angle = Math.max(
+        0.22,
+        Math.min(Math.PI - 0.22, shooter.angle)
+      );
+    }
+
+    function shoot() {
+      if (activeBall || ballsLeft <= 0 || gameOver) return;
+
+      const speed = 9;
+
+      balls.push({
+        x: shooter.x,
+        y: shooter.y,
+        vx: Math.cos(shooter.angle) * speed,
+        vy: Math.sin(shooter.angle) * speed,
+        life: 0
+      });
+
+      ballsLeft--;
+      activeBall = true;
+      updateHud();
+    }
+
+    function circleHit(a, b, radius) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return dx * dx + dy * dy < radius * radius;
+    }
+
+    function hitPeg(ball, peg) {
+      const dx = ball.x - peg.x;
+      const dy = ball.y - peg.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const minDistance = ballRadius + pegRadius;
+
+      if (distance < minDistance) {
+        const nx = dx / (distance || 1);
+        const ny = dy / (distance || 1);
+
+        // Push ball outside the peg
+        ball.x = peg.x + nx * minDistance;
+        ball.y = peg.y + ny * minDistance;
+
+        // Reflect velocity along the collision normal
+        const dot = ball.vx * nx + ball.vy * ny;
+        ball.vx -= 2 * dot * nx;
+        ball.vy -= 2 * dot * ny;
+
+        // Add some energy loss
+        ball.vx *= 0.94;
+        ball.vy *= 0.94;
+
+        peg.active = false;
+        score += peg.color === "orange" ? 100 : 25;
+
+        burst(peg.x, peg.y, peg.color);
+        updateHud();
+
+        if (pegs.every(p => !p.active)) {
+          gameOver = true;
+          message = "LEVEL CLEARED!";
+        }
+      }
+    }
+
+    function updateBall(ball) {
+      ball.life++;
+
+      ball.vy += gravity;
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+
+      // Side walls
+      if (ball.x - ballRadius < 0) {
+        ball.x = ballRadius;
+        ball.vx *= -0.85;
+      }
+
+      if (ball.x + ballRadius > W) {
+        ball.x = W - ballRadius;
+        ball.vx *= -0.85;
+      }
+
+      // Ceiling
+      if (ball.y - ballRadius < 0) {
+        ball.y = ballRadius;
+        ball.vy *= -0.85;
+      }
+
+      for (const peg of pegs) {
+        if (peg.active) {
+          hitPeg(ball, peg);
+        }
+      }
+    }
+
+    function update() {
+      if (!gameOver) {
+        for (const ball of balls) {
+          updateBall(ball);
+        }
+
+        // Remove balls that leave the bottom
+        balls = balls.filter(ball => ball.y < H + 50);
+
+        if (activeBall && balls.length === 0) {
+          activeBall = false;
+
+          if (ballsLeft === 0 && pegs.some(p => p.active)) {
+            gameOver = true;
+            message = "GAME OVER";
+          }
+        }
+      }
+
+      updateParticles();
+    }
+
+    function drawBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, H);
+      gradient.addColorStop(0, "#24366c");
+      gradient.addColorStop(1, "#0d1530");
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      // Decorative stars
+      ctx.fillStyle = "rgba(255,255,255,.35)";
+
+      for (let i = 0; i < 45; i++) {
+        const x = (i * 137) % W;
+        const y = 80 + ((i * 83) % 700);
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+
+    function drawShooter() {
+      const length = 45;
+      const endX = shooter.x + Math.cos(shooter.angle) * length;
+      const endY = shooter.y + Math.sin(shooter.angle) * length;
+
+      ctx.save();
+
+      ctx.lineWidth = 13;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#f5f7ff";
+      ctx.beginPath();
+      ctx.moveTo(shooter.x, shooter.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffd166";
+      ctx.beginPath();
+      ctx.arc(shooter.x, shooter.y, 15, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#ff9f1c";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawPegs() {
+      for (const peg of pegs) {
+        if (!peg.active) continue;
+
+        ctx.save();
+
+        const color = peg.color === "orange" ? "#ff7b22" : "#4cc9f0";
+        const highlight = peg.color === "orange" ? "#ffd166" : "#b8f2ff";
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(peg.x, peg.y, pegRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = highlight;
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.arc(peg.x - 6, peg.y - 6, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function drawBalls() {
+      for (const ball of balls) {
+        ctx.save();
+
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 14;
+
+        const gradient = ctx.createRadialGradient(
+          ball.x - 3,
+          ball.y - 4,
+          1,
+          ball.x,
+          ball.y,
+          ballRadius
+        );
+
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(0.4, "#ffe66d");
+        gradient.addColorStop(1, "#ff8c42");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    function drawMessage() {
+      if (!message) return;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, .65)";
+      ctx.fillRect(0, H / 2 - 70, W, 140);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ffd166";
+      ctx.font = "bold 42px system-ui";
+      ctx.fillText(message, W / 2, H / 2);
+
+      ctx.fillStyle = "white";
+      ctx.font = "18px system-ui";
+      ctx.fillText("Press Restart Game to play again", W / 2, H / 2 + 38);
+      ctx.restore();
+    }
+
+    function draw() {
+      drawBackground();
+      drawPegs();
+      drawShooter();
+      drawBalls();
+      drawParticles();
+      drawMessage();
+    }
+
+    function burst(x, y, color) {
+      for (let i = 0; i < 18; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 4;
+
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 2 + Math.random() * 4,
+          color: color === "orange" ? "#ff9f1c" : "#4cc9f0",
+          life: 1,
+          maxLife: 35 + Math.random() * 25
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.life++;
+      }
+
+      particles = particles.filter(p => p.life < p.maxLife);
+    }
+
+    canvas.addEventListener("mousemove", event => {
+      const mouse = getMousePosition(event);
+      aimAt(mouse.x, mouse.y);
+    });
+
+    canvas.addEventListener("click", shoot);
+
+    document.addEventListener("keydown", event => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        shoot();
+      }
+    });
+
+    restartBtn.addEventListener("click", resetGame);
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    resetGame();
+    gameLoop();
+  </script>
+</body>
+</html>
