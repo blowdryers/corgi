@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unlimited 3D Physics Stress Test</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050509;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    #info {
+      position: fixed;
+      z-index: 10;
+      top: 15px;
+      left: 15px;
+      padding: 12px 15px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      user-select: none;
+      pointer-events: none;
+      line-height: 1.5;
+    }
+
+    #info strong {
+      color: #75e6ff;
+    }
+
+    #status {
+      color: #9dffa9;
+      font-size: 13px;
+    }
+
+    #crosshair {
+      position: fixed;
+      z-index: 5;
+      left: 50%;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  </script>
+</head>
+
+<body>
+  <div id="info">
+    <strong>Hold SPACE for 0.5 seconds</strong><br>
+    Move the mouse to aim the spawn location<br>
+    <span id="status">Objects: 0</span>
+  </div>
+
+  <div id="crosshair"></div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import * as CANNON from "cannon-es";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    // ============================================================
+    // Stress-test settings
+    // ============================================================
+
+    /*
+      Objects spawned per animation frame after holding Space.
+
+      Examples:
+        1    = moderate
+        20   = heavy
+        100  = very heavy
+        1000 = extreme
+
+      There is intentionally no maximum object count.
+    */
+    const objectsPerFrame = 20;
+
+    // ============================================================
+    // Three.js scene
+    // ============================================================
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050509);
+    scene.fog = new THREE.FogExp2(0x050509, 0.018);
+
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      500
+    );
+
+    camera.position.set(0, 12, 22);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: "high-performance"
+    });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 4, 0);
+
+    // ============================================================
+    // Lighting
+    // ============================================================
+
+    const hemisphereLight = new THREE.HemisphereLight(
+      0xa8c7ff,
+      0x241126,
+      2.2
+    );
+
+    scene.add(hemisphereLight);
+
+    const directionalLight = new THREE.DirectionalLight(
+      0xffffff,
+      3.5
+    );
+
+    directionalLight.position.set(-8, 18, 10);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.set(2048, 2048);
+
+    directionalLight.shadow.camera.left = -30;
+    directionalLight.shadow.camera.right = 30;
+    directionalLight.shadow.camera.top = 30;
+    directionalLight.shadow.camera.bottom = -30;
+
+    scene.add(directionalLight);
+
+    const pinkLight = new THREE.PointLight(
+      0xff3dbe,
+      35,
+      40
+    );
+
+    pinkLight.position.set(5, 8, -8);
+    scene.add(pinkLight);
+
+    // ============================================================
+    // Physics world
+    // ============================================================
+
+    const world = new CANNON.World({
+      gravity: new CANNON.Vec3(0, -15, 0)
+    });
+
+    world.broadphase = new CANNON.SAPBroadphase(world);
+    world.allowSleep = true;
+
+    world.defaultContactMaterial.friction = 0.55;
+    world.defaultContactMaterial.restitution = 0.35;
+
+    const objectMaterial = new CANNON.Material("objects");
+
+    const objectContactMaterial = new CANNON.ContactMaterial(
+      objectMaterial,
+      objectMaterial,
+      {
+        friction: 0.65,
+        restitution: 0.4,
+        contactEquationStiffness: 1e7,
+        contactEquationRelaxation: 4
+      }
+    );
+
+    world.addContactMaterial(objectContactMaterial);
+
+    // ============================================================
+    // Floor
+    // ============================================================
+
+    const floorBody = new CANNON.Body({
+      mass: 0,
+      material: objectMaterial,
+      shape: new CANNON.Plane()
+    });
+
+    floorBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+    world.addBody(floorBody);
+
+    const floorMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({
+        color: 0x111322,
+        roughness: 0.45,
+        metalness: 0.2
+      })
+    );
+
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.receiveShadow = true;
+    scene.add(floorMesh);
+
+    const grid = new THREE.GridHelper(
+      100,
+      100,
+      0x303a70,
+      0x161b35
+    );
+
+    grid.position.y = 0.01;
+    scene.add(grid);
+
+    // ============================================================
+    // Shader
+    // ============================================================
+
+    const vertexShader = `
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+
+        gl_Position = projectionMatrix * viewMatrix * worldPosition;
+      }
+    `;
+
+    const fragmentShader = `
+      uniform vec3 uColor;
+      uniform float uTime;
+
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+
+      void main() {
+        vec3 viewDirection =
+          normalize(cameraPosition - vWorldPosition);
+
+        float light = dot(
+          normalize(vNormal),
+          normalize(vec3(-0.3, 0.8, 0.6))
+        );
+
+        light = smoothstep(-0.4, 1.0, light);
+
+        float rim = 1.0 -
+          max(dot(vNormal, viewDirection), 0.0);
+
+        rim = pow(rim, 2.5);
+
+        float pulse =
+          0.96 + sin(uTime * 2.0 + vWorldPosition.y) * 0.04;
+
+        vec3 finalColor =
+          uColor * (0.42 + light * 0.75);
+
+        finalColor += uColor * rim * 0.65;
+        finalColor *= pulse;
+
+        gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
+
+    // ============================================================
+    // Object storage
+    // ============================================================
+
+    const objects = [];
+
+    function randomColor() {
+      const color = new THREE.Color();
+
+      color.setHSL(
+        Math.random(),
+        0.75,
+        0.52
+      );
+
+      return color;
+    }
+
+    function getRandomShape() {
+      const type = Math.floor(Math.random() * 6);
+
+      // Sphere
+      if (type === 0) {
+        const radius = 0.35 + Math.random() * 0.55;
+
+        return {
+          geometry: new THREE.SphereGeometry(
+            radius,
+            20,
+            14
+          ),
+          physicsShape: new CANNON.Sphere(radius),
+          radius,
+          type: "sphere"
+        };
+      }
+
+      // Cube
+      if (type === 1) {
+        const size = 0.55 + Math.random() * 0.9;
+
+        return {
+          geometry: new THREE.BoxGeometry(
+            size,
+            size,
+            size
+          ),
+          physicsShape: new CANNON.Box(
+            new CANNON.Vec3(
+              size / 2,
+              size / 2,
+              size / 2
+            )
+          ),
+          radius: size / 2,
+          type: "box"
+        };
+      }
+
+      // Cylinder
+      if (type === 2) {
+        const radius = 0.35 + Math.random() * 0.45;
+        const height = 0.7 + Math.random() * 1.2;
+
+        return {
+          geometry: new THREE.CylinderGeometry(
+            radius,
+            radius,
+            height,
+            20
+          ),
+          physicsShape: new CANNON.Cylinder(
+            radius,
+            radius,
+            height,
+            16
+          ),
+          radius,
+          type: "cylinder"
+        };
+      }
+
+      // Icosahedron
+      if (type === 3) {
+        const radius = 0.4 + Math.random() * 0.55;
+
+        return {
+          geometry: new THREE.IcosahedronGeometry(
+            radius,
+            1
+          ),
+          physicsShape: new CANNON.Sphere(radius),
+          radius,
+          type: "icosahedron"
+        };
+      }
+
+      // Capsule
+      if (type === 4) {
+        const radius = 0.35 + Math.random() * 0.5;
+        const length = 0.8 + Math.random() * 1.1;
+
+        return {
+          geometry: new THREE.CapsuleGeometry(
+            radius,
+            length,
+            8,
+            16
+          ),
+          physicsShape: new CANNON.Sphere(
+            radius + length * 0.35
+          ),
+          radius,
+          type: "capsule"
+        };
+      }
+
+      // Torus knot
+      const radius = 0.35 + Math.random() * 0.5;
+
+      return {
+        geometry: new THREE.TorusKnotGeometry(
+          radius,
+          radius * 0.32,
+          48,
+          12
+        ),
+        physicsShape: new CANNON.Sphere(radius * 1.7),
+        radius,
+        type: "torus"
+      };
+    }
+
+    function createObject(position) {
+      const shape = getRandomShape();
+      const color = randomColor();
+
+      const shaderMaterial = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          uColor: {
+            value: color
+          },
+          uTime: {
+            value: Math.random() * 10
+          }
+        }
+      });
+
+      const mesh = new THREE.Mesh(
+        shape.geometry,
+        shaderMaterial
+      );
+
+      mesh.position.copy(position);
+
+      mesh.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI
+      );
+
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      scene.add(mesh);
+
+      const body = new CANNON.Body({
+        mass: 0.8 + Math.random() * 2.4,
+        material: objectMaterial,
+        shape: shape.physicsShape,
+        linearDamping: 0.08,
+        angularDamping: 0.15,
+        allowSleep: true
+      });
+
+      body.position.set(
+        position.x,
+        position.y,
+        position.z
+      );
+
+      body.velocity.set(
+        (Math.random() - 0.5) * 3,
+        Math.random() * 3,
+        (Math.random() - 0.5) * 3
+      );
+
+      body.angularVelocity.set(
+        Math.random() * 8,
+        Math.random() * 8,
+        Math.random() * 8
+      );
+
+      world.addBody(body);
+
+      const item = {
+        mesh,
+        body,
+        impact: 0,
+        previousVelocity: new CANNON.Vec3()
+      };
+
+      objects.push(item);
+    }
+
+    // ============================================================
+    // Cursor aiming
+    // ============================================================
+
+    const pointer = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+    const spawnPoint = new THREE.Vector3();
+
+    window.addEventListener("pointermove", event => {
+      pointer.x =
+        (event.clientX / window.innerWidth) * 2 - 1;
+
+      pointer.y =
+        -(event.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    function getSpawnPosition() {
+      raycaster.setFromCamera(pointer, camera);
+
+      const groundPlane = new THREE.Plane(
+        new THREE.Vector3(0, 1, 0),
+        0
+      );
+
+      const intersection =
+        raycaster.ray.intersectPlane(
+          groundPlane,
+          spawnPoint
+        );
+
+      if (!intersection) {
+        spawnPoint.set(0, 0, 0);
+      }
+
+      return new THREE.Vector3(
+        spawnPoint.x,
+        2.5,
+        spawnPoint.z
+      );
+    }
+
+    // ============================================================
+    // Space-bar spawning
+    // ============================================================
+
+    let spaceDown = false;
+    let holdStart = 0;
+    let spawning = false;
+
+    const statusElement =
+      document.getElementById("status");
+
+    function beginSpawning() {
+      if (spawning) return;
+
+      spawning = true;
+      statusElement.textContent =
+        "Unlimited spawning… Objects: " + objects.length;
+    }
+
+    function stopSpawning() {
+      spawning = false;
+      statusElement.textContent =
+        "Objects: " + objects.length;
+    }
+
+    window.addEventListener("keydown", event => {
+      if (event.code !== "Space") return;
+
+      event.preventDefault();
+
+      if (spaceDown) return;
+
+      spaceDown = true;
+      holdStart = performance.now();
+
+      setTimeout(() => {
+        if (
+          spaceDown &&
+          performance.now() - holdStart >= 500
+        ) {
+          beginSpawning();
+        }
+      }, 500);
+    });
+
+    window.addEventListener("keyup", event => {
+      if (event.code !== "Space") return;
+
+      event.preventDefault();
+
+      spaceDown = false;
+      holdStart = 0;
+      stopSpawning();
+    });
+
+    // ============================================================
+    // Squishy deformation
+    // ============================================================
+
+    function updateSquish(item, deltaTime) {
+      const velocity = item.body.velocity;
+      const speed = velocity.length();
+
+      const fallingStretch =
+        THREE.MathUtils.clamp(
+          speed * 0.025,
+          0,
+          0.3
+        );
+
+      const impactStrength =
+        item.previousVelocity.length() - speed;
+
+      if (impactStrength > 1.5) {
+        item.impact = Math.min(
+          1,
+          item.impact + impactStrength * 0.04
+        );
+      }
+
+      item.impact = Math.max(
+        0,
+        item.impact - deltaTime * 3.5
+      );
+
+      const squish = item.impact * 0.35;
+
+      const targetX = 1 + squish;
+      const targetY =
+        1 - squish * 0.65 + fallingStretch;
+      const targetZ = 1 + squish;
+
+      item.mesh.scale.x = THREE.MathUtils.lerp(
+        item.mesh.scale.x,
+        targetX,
+        0.2
+      );
+
+      item.mesh.scale.y = THREE.MathUtils.lerp(
+        item.mesh.scale.y,
+        targetY,
+        0.2
+      );
+
+      item.mesh.scale.z = THREE.MathUtils.lerp(
+        item.mesh.scale.z,
+        targetZ,
+        0.2
+      );
+
+      item.previousVelocity.copy(velocity);
+    }
+
+    // ============================================================
+    // Animation loop
+    // ============================================================
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const deltaTime = Math.min(
+        clock.getDelta(),
+        0.05
+      );
+
+      /*
+        Unlimited spawning.
+
+        This happens once per rendered frame rather than with
+        setInterval(1). If the browser renders at 60 FPS and
+        objectsPerFrame is 20, it creates roughly 1,200 objects
+        per second.
+      */
+      if (spawning) {
+        for (
+          let i = 0;
+          i < objectsPerFrame;
+          i++
+        ) {
+          createObject(getSpawnPosition());
+        }
+      }
+
+      world.step(
+        1 / 60,
+        deltaTime,
+        3
+      );
+
+      for (const item of objects) {
+        const mesh = item.mesh;
+        const body = item.body;
+
+        mesh.position.set(
+          body.position.x,
+          body.position.y,
+          body.position.z
+        );
+
+        mesh.quaternion.set(
+          body.quaternion.x,
+          body.quaternion.y,
+          body.quaternion.z,
+          body.quaternion.w
+        );
+
+        mesh.material.uniforms.uTime.value +=
+          deltaTime;
+
+        updateSquish(item, deltaTime);
+      }
+
+      controls.update();
+
+      statusElement.textContent =
+        spawning
+          ? "Unlimited spawning… Objects: " + objects.length
+          : "Objects: " + objects.length;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // ============================================================
+    // Resize handling
+    // ============================================================
+
+    window.addEventListener("resize", () => {
+      camera.aspect =
+        window.innerWidth / window.innerHeight;
+
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+    });
+  </script>
+</body>
+</html>
