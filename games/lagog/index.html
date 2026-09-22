@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Physics Stress Test</title>
+<style>
+html,body{margin:0;overflow:hidden;background:#050509;color:#fff;font:14px Arial}
+#ui{position:fixed;z-index:5;top:15px;left:15px;padding:12px 15px;
+background:#0009;border:1px solid #fff3;border-radius:12px;line-height:1.5}
+b{color:#75e6ff}#status{color:#9f9}
+#error{display:none;position:fixed;z-index:20;bottom:15px;left:15px;right:15px;
+padding:12px;background:#900;border:2px solid #f77;white-space:pre-wrap;font:13px monospace}
+#cross{position:fixed;z-index:4;left:50%;top:50%;width:14px;height:14px;
+transform:translate(-50%,-50%);border:1px solid #fff;border-radius:50%}
+</style>
+<script type="importmap">
+{"imports":{
+"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="ui"><b>Hold SPACE for 0.5 seconds</b><br>
+Move the mouse to aim<br><span id="status">Objects: 0</span></div>
+<div id="cross"></div><div id="error"></div>
+<script>
+addEventListener("error",e=>{
+let x=document.querySelector("#error");x.style.display="block";
+x.textContent="JavaScript error:\n"+e.message+"\n"+e.filename+":"+e.lineno
+});
+addEventListener("unhandledrejection",e=>{
+let x=document.querySelector("#error");x.style.display="block";
+x.textContent="Module error:\n"+e.reason
+});
+</script>
+
+<script type="module">
+import * as T from"three";
+import * as C from"https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js";
+import{OrbitControls}from"three/addons/controls/OrbitControls.js";
+
+/* Increase this for a more extreme test. There is no object limit. */
+const perFrame=20,ui=document.querySelector("#status"),items=[];
+
+const scene=new T.Scene();
+scene.background=new T.Color(0x050509);
+scene.fog=new T.FogExp2(0x050509,.018);
+
+const cam=new T.PerspectiveCamera(60,innerWidth/innerHeight,.1,500);
+cam.position.set(0,12,22);
+
+const out=new T.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+out.setSize(innerWidth,innerHeight);
+out.setPixelRatio(Math.min(devicePixelRatio,2));
+out.shadowMap.enabled=true;
+out.outputColorSpace=T.SRGBColorSpace;
+document.body.appendChild(out.domElement);
+
+const controls=new OrbitControls(cam,out.domElement);
+controls.enableDamping=true;
+controls.target.set(0,4,0);
+
+scene.add(new T.HemisphereLight(0xa8c7ff,0x241126,2.2));
+
+let dl=new T.DirectionalLight(0xffffff,3.5);
+dl.position.set(-8,18,10);dl.castShadow=true;dl.shadow.mapSize.set(1024,1024);
+scene.add(dl);
+
+let pl=new T.PointLight(0xff3dbe,35,40);
+pl.position.set(5,8,-8);scene.add(pl);
+
+const world=new C.World({gravity:new C.Vec3(0,-15,0)});
+world.broadphase=new C.SAPBroadphase(world);
+world.allowSleep=true;
+world.defaultContactMaterial.friction=.55;
+world.defaultContactMaterial.restitution=.35;
+
+const pm=new C.Material("objects");
+world.addContactMaterial(new C.ContactMaterial(pm,pm,{
+friction:.65,restitution:.4,contactEquationStiffness:1e7,
+contactEquationRelaxation:4
+}));
+
+let fb=new C.Body({mass:0,material:pm,shape:new C.Plane()});
+fb.quaternion.setFromEuler(-Math.PI/2,0,0);world.addBody(fb);
+
+let floor=new T.Mesh(new T.PlaneGeometry(100,100),
+new T.MeshStandardMaterial({color:0x111322,roughness:.45,metalness:.2}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+let grid=new T.GridHelper(100,100,0x303a70,0x161b35);
+grid.position.y=.01;scene.add(grid);
+
+const vs=`
+varying vec3 n,p;
+void main(){n=normalize(normalMatrix*normal);
+vec4 w=modelMatrix*vec4(position,1.);p=w.xyz;
+gl_Position=projectionMatrix*viewMatrix*w;}`;
+
+const fs=`
+uniform vec3 color;uniform float time;
+varying vec3 n,p;
+void main(){vec3 v=normalize(cameraPosition-p);
+float l=dot(normalize(n),normalize(vec3(-.3,.8,.6)));
+l=smoothstep(-.4,1.,l);float r=pow(1.-max(dot(n,v),0.),2.5);
+vec3 c=color*(.42+l*.75)+color*r*.65;
+c*=.96+sin(time*2.+p.y)*.04;gl_FragColor=vec4(c,1.);}`;
+
+function randomShape(){
+let t=Math.floor(Math.random()*6),r=.35+Math.random()*.55;
+if(t==0)return{g:new T.SphereGeometry(r,16,12),s:new C.Sphere(r)};
+if(t==1){let z=.55+Math.random()*.9;
+return{g:new T.BoxGeometry(z,z,z),s:new C.Box(new C.Vec3(z/2,z/2,z/2))}}
+if(t==2){let h=.7+Math.random()*1.2;
+return{g:new T.CylinderGeometry(r,r,h,16),s:new C.Cylinder(r,r,h,12)}}
+if(t==3)return{g:new T.IcosahedronGeometry(r,1),s:new C.Sphere(r)};
+if(t==4){let h=.8+Math.random()*1.1;
+return{g:new T.CapsuleGeometry(r,h,6,12),s:new C.Sphere(r+h*.35)}}
+return{g:new T.TorusKnotGeometry(r,r*.32,32,8),s:new C.Sphere(r*1.7)};
+}
+
+function make(pos){
+let q=randomShape(),color=new T.Color();
+color.setHSL(Math.random(),.75,.52);
+
+let mesh=new T.Mesh(q.g,new T.ShaderMaterial({
+vertexShader:vs,fragmentShader:fs,
+uniforms:{color:{value:color},time:{value:Math.random()*10}}
+}));
+mesh.position.copy(pos);
+mesh.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
+mesh.castShadow=true;scene.add(mesh);
+
+let body=new C.Body({
+mass:.8+Math.random()*2.4,material:pm,shape:q.s,
+linearDamping:.08,angularDamping:.15
+});
+body.position.set(pos.x,pos.y,pos.z);
+body.velocity.set((Math.random()-.5)*3,Math.random()*3,(Math.random()-.5)*3);
+body.angularVelocity.set(Math.random()*8,Math.random()*8,Math.random()*8);
+world.addBody(body);
+items.push({mesh,body,impact:0,last:0});
+}
+
+/* Mouse aiming */
+let pointer=new T.Vector2(),ray=new T.Raycaster(),hit=new T.Vector3();
+addEventListener("pointermove",e=>{
+pointer.x=e.clientX/innerWidth*2-1;
+pointer.y=-(e.clientY/innerHeight)*2+1;
+});
+function spawnPoint(){
+ray.setFromCamera(pointer,cam);
+let p=new T.Plane(new T.Vector3(0,1,0),0);
+if(!ray.ray.intersectPlane(p,hit))hit.set(0,0,0);
+return new T.Vector3(hit.x,2.5,hit.z);
+}
+
+/* Keyboard control */
+let down=false,spawning=false,timer;
+function status(x){ui.textContent=x+" | Objects: "+items.length}
+function stop(){
+spawning=false;if(timer)clearTimeout(timer);
+status("Stopped");
+}
+document.addEventListener("keydown",e=>{
+if(e.code!="Space"&&e.key!=" ")return;
+e.preventDefault();if(down)return;down=true;
+make(spawnPoint());status("Holding Space");
+timer=setTimeout(()=>{if(down){spawning=true;status("SPAWNING")}},500);
+});
+document.addEventListener("keyup",e=>{
+if(e.code!="Space"&&e.key!=" ")return;
+e.preventDefault();down=false;stop();
+});
+addEventListener("blur",()=>{down=false;stop()});
+
+/* Animation and unlimited spawning */
+let clock=new T.Clock();
+function loop(){
+requestAnimationFrame(loop);
+let dt=Math.min(clock.getDelta(),.05);
+
+if(spawning)for(let i=0;i<perFrame;i++)make(spawnPoint());
+
+world.step(1/60,dt,3);
+
+for(let o of items){
+let m=o.mesh,b=o.body,s=b.velocity.length();
+m.position.set(b.position.x,b.position.y,b.position.z);
+m.quaternion.set(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w);
+
+let impact=o.last-s;
+if(impact>1.5)o.impact=Math.min(1,o.impact+impact*.04);
+o.impact=Math.max(0,o.impact-dt*3.5);
+let z=o.impact*.35,stretch=Math.min(s*.025,.3);
+m.scale.x=T.MathUtils.lerp(m.scale.x,1+z,.2);
+m.scale.y=T.MathUtils.lerp(m.scale.y,1-z*.65+stretch,.2);
+m.scale.z=T.MathUtils.lerp(m.scale.z,1+z,.2);
+m.material.uniforms.time.value+=dt;o.last=s;
+}
+controls.update();
+if(spawning)status("SPAWNING");
+out.render(scene,cam);
+}
+loop();
+
+addEventListener("resize",()=>{
+cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();
+out.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
