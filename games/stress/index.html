@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CPU / GPU / RAM Stress Test</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #080b12;
+    color: #e8eefc;
+    font: 14px system-ui, sans-serif;
+  }
+  header {
+    padding: 14px 18px;
+    background: #111827;
+    border-bottom: 1px solid #263247;
+  }
+  h1 { margin: 0 0 5px; font-size: 20px; }
+  .warning { color: #ffb86b; }
+  #panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: end;
+    padding: 14px 18px;
+    background: #0d1320;
+    border-bottom: 1px solid #263247;
+  }
+  label { display: grid; gap: 4px; }
+  input, button {
+    color: #fff;
+    background: #1b2638;
+    border: 1px solid #40516e;
+    border-radius: 5px;
+    padding: 7px;
+  }
+  input[type=number] { width: 100px; }
+  button { cursor: pointer; }
+  button:hover { background: #2b3d5b; }
+  #stop { background: #7f1d1d; }
+  #stats {
+    padding: 10px 18px;
+    background: #0a101b;
+    color: #9fafd0;
+    white-space: pre-wrap;
+  }
+  #stage {
+    position: relative;
+    height: calc(100vh - 185px);
+    min-height: 350px;
+    overflow: hidden;
+    background: #000;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #gpu { z-index: 1; }
+  #cpuCanvas { z-index: 2; pointer-events: none; opacity: .15; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CPU / GPU / RAM Stress Test</h1>
+  <div class="warning">
+    Use at your own risk. Stop the test if your system becomes unstable, overheats, or freezes.
+  </div>
+</header>
+
+<section id="panel">
+  <label>CPU workers
+    <input id="workers" type="number" min="0" max="256"
+           value="${navigator.hardwareConcurrency || 4}">
+  </label>
+
+  <label>RAM allocation, MB
+    <input id="ram" type="number" min="0" max="65536" value="512">
+  </label>
+
+  <label>GPU shader complexity
+    <input id="complexity" type="number" min="1" max="100" value="35">
+  </label>
+
+  <label>Canvas particles
+    <input id="particles" type="number" min="0" max="1000000" value="30000">
+  </label>
+
+  <button id="start">Start stress test</button>
+  <button id="stop">Stop</button>
+</section>
+
+<div id="stats">Idle</div>
+
+<div id="stage">
+  <canvas id="gpu"></canvas>
+  <canvas id="cpuCanvas"></canvas>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const gpuCanvas = $("gpu");
+const cpuCanvas = $("cpuCanvas");
+const cpuCtx = cpuCanvas.getContext("2d", { alpha: true });
+const stats = $("stats");
+
+let running = false;
+let workers = [];
+let ramBlocks = [];
+let particleData = [];
+let animationId = 0;
+let gl, program, gpuStart;
+let frameCount = 0;
+let lastStats = performance.now();
+let lastFrames = 0;
+
+const workerSource = `
+self.onmessage = ({data}) => {
+  let x = Math.random() * 1000 + 1;
+  let y = 0;
+  while (data.running) {
+    // CPU-heavy floating-point and transcendental workload.
+    for (let i = 0; i < 300000; i++) {
+      x = Math.sin(x) * Math.cos(x + i) +
+          Math.sqrt(Math.abs(x) + 1.000001) +
+          Math.log1p(Math.abs(x));
+      y += x;
+    }
+    if ((y & 1023) === 0) postMessage(y);
+  }
+};
+`;
+
+function resizeCanvases() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const rect = $("stage").getBoundingClientRect();
+
+  for (const canvas of [gpuCanvas, cpuCanvas]) {
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  }
+
+  if (gl) {
+    gl.viewport(0, 0, gpuCanvas.width, gpuCanvas.height);
+    gl.uniform2f(gl.getUniformLocation(program, "u_resolution"),
+                 gpuCanvas.width, gpuCanvas.height);
+  }
+}
+addEventListener("resize", resizeCanvases);
+
+function createWorkers(count) {
+  const url = URL.createObjectURL(
+    new Blob([workerSource], { type: "application/javascript" })
+  );
+
+  for (let i = 0; i < count; i++) {
+    const w = new Worker(url);
+    w.postMessage({ running: true });
+    workers.push(w);
+  }
+
+  URL.revokeObjectURL(url);
+}
+
+function allocateRAM(mb) {
+  // Allocate many blocks so the browser cannot optimize this away.
+  const blockSize = 16 * 1024 * 1024;
+  const blocks = Math.floor((mb * 1024 * 1024) / blockSize);
+
+  for (let i = 0; i < blocks; i++) {
+    const block = new Uint8Array(blockSize);
+
+    // Touch every page to force physical memory commitment.
+    for (let j = 0; j < block.length; j += 4096) {
+      block[j] = (i + j) & 255;
+    }
+
+    ramBlocks.push(block);
+  }
+}
+
+function initGPU() {
+  gl = gpuCanvas.getContext("webgl2", {
+    antialias: false,
+    powerPreference: "high-performance"
+  }) || gpuCanvas.getContext("webgl", {
+    antialias: false,
+    powerPreference: "high-performance"
+  });
+
+  if (!gl) throw new Error("WebGL is unavailable in this browser.");
+
+  const vertex = `
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0.0, 1.0);
+    }
+  `;
+
+  const fragment = `
+    precision highp float;
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform float u_complexity;
+
+    void main() {
+      vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution) /
+               min(u_resolution.x, u_resolution.y);
+
+      vec2 z = p;
+      float v = 0.0;
+
+      for (int i = 0; i < 100; i++) {
+        if (float(i) >= u_complexity) break;
+
+        z = vec2(
+          z.x * z.x - z.y * z.y,
+          2.0 * z.x * z.y
+        ) + p * 0.35;
+
+        v += sin(z.x * 4.0 + u_time) *
+             cos(z.y * 5.0 - u_time * 1.3);
+
+        if (dot(z, z) > 25.0) break;
+      }
+
+      float c = abs(v / max(u_complexity, 1.0));
+      gl_FragColor = vec4(
+        0.5 + 0.5 * sin(c * 9.0 + u_time),
+        0.5 + 0.5 * sin(c * 13.0 + u_time + 2.0),
+        0.5 + 0.5 * sin(c * 17.0 + u_time + 4.0),
+        1.0
+      );
+    }
+  `;
+
+  function compile(type, source) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, source);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(s));
+    }
+    return s;
+  }
+
+  program = gl.createProgram();
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, vertex));
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragment));
+  gl.linkProgram(program);
+  gl.useProgram(program);
+
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]),
+    gl.STATIC_DRAW
+  );
+
+  const position = gl.getAttribLocation(program, "position");
+  gl.enableVertexAttribArray(position);
+  gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+  resizeCanvases();
+}
+
+function createParticles(count) {
+  particleData = new Float32Array(count * 4);
+
+  for (let i = 0; i < count; i++) {
+    const p = i * 4;
+    particleData[p] = Math.random() * cpuCanvas.width;
+    particleData[p + 1] = Math.random() * cpuCanvas.height;
+    particleData[p + 2] = (Math.random() - 0.5) * 8;
+    particleData[p + 3] = (Math.random() - 0.5) * 8;
+  }
+}
+
+function drawCPU() {
+  const w = cpuCanvas.width;
+  const h = cpuCanvas.height;
+
+  cpuCtx.fillStyle = "rgba(0,0,0,0.12)";
+  cpuCtx.fillRect(0, 0, w, h);
+
+  cpuCtx.fillStyle = "#65d9ff";
+  const count = particleData.length / 4;
+
+  for (let i = 0; i < count; i++) {
+    const p = i * 4;
+
+    particleData[p] += particleData[p + 2];
+    particleData[p + 1] += particleData[p + 3];
+
+    if (particleData[p] < 0 || particleData[p] > w)
+      particleData[p + 2] *= -1;
+
+    if (particleData[p + 1] < 0 || particleData[p + 1] > h)
+      particleData[p + 3] *= -1;
+
+    cpuCtx.fillRect(particleData[p], particleData[p + 1], 2, 2);
+  }
+}
+
+function drawGPU(now) {
+  const complexity = Number($("complexity").value);
+
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  gl.useProgram(program);
+  gl.uniform1f(gl.getUniformLocation(program, "u_time"), now / 1000);
+  gl.uniform1f(
+    gl.getUniformLocation(program, "u_complexity"),
+    Math.max(1, Math.min(100, complexity))
+  );
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function updateStats(now) {
+  if (now - lastStats < 1000) return;
+
+  const fps = frameCount - lastFrames;
+  const used = performance.memory
+    ? Math.round(performance.memory.usedJSHeapSize / 1048576)
+    : "n/a";
+
+  stats.textContent =
+    "Running\n" +
+    "Animation FPS: " + fps + "\n" +
+    "CPU workers: " + workers.length + "\n" +
+    "RAM blocks: " + ramBlocks.length +
+      " × 16 MB = approximately " +
+      (ramBlocks.length * 16) + " MB\n" +
+    "Particle count: " + particleData.length / 4 + "\n" +
+    "JS heap used: " + used + " MB";
+
+  lastStats = now;
+  lastFrames = frameCount;
+}
+
+function frame(now) {
+  if (!running) return;
+
+  drawGPU(now);
+  drawCPU();
+
+  frameCount++;
+  updateStats(now);
+  animationId = requestAnimationFrame(frame);
+}
+
+function stop() {
+  running = false;
+  cancelAnimationFrame(animationId);
+
+  for (const w of workers) {
+    w.terminate();
+  }
+
+  workers = [];
+  ramBlocks = [];
+  particleData = [];
+
+  if (gl) {
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+
+  cpuCtx.clearRect(0, 0, cpuCanvas.width, cpuCanvas.height);
+  stats.textContent = "Stopped. Allocated RAM has been released.";
+}
+
+$("start").onclick = () => {
+  if (running) return;
+
+  stop();
+  running = true;
+  frameCount = 0;
+  lastFrames = 0;
+  lastStats = performance.now();
+
+  try {
+    initGPU();
+    createWorkers(Math.max(0, Number($("workers").value) || 0));
+    allocateRAM(Math.max(0, Number($("ram").value) || 0));
+    createParticles(Math.max(0, Number($("particles").value) || 0));
+
+    stats.textContent = "Starting stress test...";
+    animationId = requestAnimationFrame(frame);
+  } catch (error) {
+    running = false;
+    stats.textContent = "Could not start: " + error.message;
+  }
+};
+
+$("stop").onclick = stop;
+
+resizeCanvases();
+</script>
+</body>
+</html>
