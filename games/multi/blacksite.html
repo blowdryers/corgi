@@ -1591,9 +1591,9 @@ function cropPanel(img){showPanel('<div class="pn"><h3>Profile picture</h3><h2>C
   $('cropno').onclick=()=>profilePanel()}
 function creditsPanel(){showPanel('<div class="pn credits"><h3>Credits</h3><h2>Assets</h2>'+
   '<p><b>Character and weapon models</b> by Quaternius (CC0), via poly.pizza: SWAT, Character Soldier, Assault Rifle, Shotgun, Sniper Rifle.</p>'+
-  '<p><b>Gunshot recordings</b> by Vincent Sevedge, "Gunshot Sounds" on OpenGameArt. Licensed CC-BY 3.0.</p>'+
+  '<p><b>Rifle, shotgun and sniper shots</b> are clips of the Fortnite SCAR, pump shotgun and sniper sounds (Epic Games). <b>Pistol shot</b> by Vincent Sevedge, "Gunshot Sounds" on OpenGameArt. Licensed CC-BY 3.0.</p>'+
   '<p><b>Reload and pump sounds</b> by SpringySpringo, "Gun Reload Sounds" on OpenGameArt (CC0).</p>'+
-  '<p><b>Music</b> from the "War on Water" tracks on OpenGameArt (CC0).</p>'+
+  '<p><b>Menu music</b>: Black Ops 2 multiplayer menu theme (Activision / Treyarch). <b>Pause music</b>: "Breakfast" from the Friday Night Funkin\' OST by Kawai Sprite. <b>Match music</b> from the "War on Water" tracks on OpenGameArt (CC0).</p>'+
   '<p><b>PBR textures and HDRI sky</b> from Poly Haven (CC0): asphalt_02, concrete_wall_008, corrugated_iron, red_brick_03, wood_planks_dirt, rusty_metal_02, industrial_sunset_puresky.</p>'+
   '<p><b>Libraries</b>: three.js (MIT). Rain, wet streets, neon surf course and all shaders are written for this game.</p><div class="row" style="margin-top:16px"><button class="go" id="crd">Close</button></div></div>');$('crd').onclick=()=>hidePanel()}
 function pauseMenu(){if(state!=='play')return;mL=mR=false;tabDown=false;setMusic('pause');const md=MODES[match.mode],sl=scoreLine();
