@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Neon Vault</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #080b16;
+    --panel: rgba(17, 22, 43, .78);
+    --cyan: #6df8ff;
+    --pink: #ff5cbb;
+    --muted: #8994b6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  body {
+    display: grid; place-items: center; background:
+      radial-gradient(ellipse at 50% 35%, #182044 0%, #0b1022 47%, #070912 100%);
+    font: 500 14px/1.4 system-ui, -apple-system, Segoe UI, sans-serif;
+    color: #eff3ff; user-select: none; -webkit-user-select: none;
+  }
+  .game {
+    width: min(100vw, 540px); height: min(100dvh, 900px);
+    min-height: 480px; position: relative; overflow: hidden;
+    background: linear-gradient(180deg, #111831, #090d1b 76%);
+    border: 1px solid rgba(163, 188, 255, .14);
+    box-shadow: 0 30px 100px #0009, inset 0 0 70px #131c3c66;
+  }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .hud {
+    position: absolute; inset: 0 0 auto; display: flex; justify-content: space-between;
+    align-items: flex-start; padding: 22px 22px 0; pointer-events: none;
+  }
+  .brand { font-weight: 850; letter-spacing: .16em; font-size: 12px; color: #dce5ff; }
+  .brand span { color: var(--cyan); }
+  .stats { display: flex; gap: 9px; }
+  .pill {
+    min-width: 76px; padding: 9px 12px; text-align: center;
+    background: var(--panel); border: 1px solid #b6c8ff20;
+    border-radius: 12px; backdrop-filter: blur(12px);
+    box-shadow: 0 7px 22px #0003;
+  }
+  .pill small { display:block; color: var(--muted); font-size: 9px; letter-spacing: .14em; }
+  .pill b { display:block; margin-top:2px; font-size:16px; font-variant-numeric: tabular-nums; }
+  .help {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    color: #aab5d1; font-size: 11px; letter-spacing: .09em; white-space: nowrap;
+    padding: 9px 13px; border-radius: 30px; background: #0b1022aa;
+    border: 1px solid #ffffff12; pointer-events: none;
+  }
+  .overlay {
+    position:absolute; inset:0; display:grid; place-items:center;
+    background: linear-gradient(#080b1677,#080b16c9); padding:24px;
+    transition: opacity .25s ease;
+  }
+  .overlay.hidden { opacity:0; pointer-events:none; }
+  .card {
+    width:min(100%, 330px); text-align:center; padding:30px 26px;
+    border:1px solid #b6c8ff26; border-radius:22px;
+    background:linear-gradient(145deg,#1a2340eF,#10162ceF);
+    box-shadow: 0 24px 80px #0009, inset 0 1px #ffffff13;
+  }
+  .sigil {
+    width:58px;height:58px;margin:0 auto 17px;border-radius:18px;
+    display:grid;place-items:center;font-size:26px;color:var(--cyan);
+    background:linear-gradient(145deg,#6df8ff22,#ff5cbb1a);
+    border:1px solid #6df8ff55; box-shadow:0 0 30px #6df8ff22;
+  }
+  h1 { margin:0; font-size:28px; letter-spacing:.1em; }
+  .sub { color:#a6b0cd; margin:9px auto 22px; max-width:250px; }
+  button {
+    border:0; border-radius:12px; padding:13px 23px; color:#06111b;
+    background:linear-gradient(100deg,#70f5ff,#9effdc);
+    font:800 12px system-ui; letter-spacing:.12em; cursor:pointer;
+    box-shadow:0 8px 26px #6df8ff35; transition:transform .15s, filter .15s;
+  }
+  button:hover { transform:translateY(-2px); filter:brightness(1.08); }
+  button:active { transform:translateY(1px) scale(.98); }
+  @media (max-height:560px) {
+    .hud { padding:12px 14px 0; } .help { bottom:9px; }
+  }
+</style>
+</head>
+<body>
+<main class="game" id="game">
+  <canvas id="canvas" aria-label="Neon Vault arcade maze"></canvas>
+  <div class="hud">
+    <div class="brand">NEON <span>VAULT</span></div>
+    <div class="stats">
+      <div class="pill"><small>SECTOR</small><b id="level">01</b></div>
+      <div class="pill"><small>SHARDS</small><b id="score">000</b></div>
+    </div>
+  </div>
+  <div class="help">SWIPE OR USE ARROW KEYS / WASD</div>
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <div class="sigil">✦</div>
+      <h1 id="headline">NEON VAULT</h1>
+      <p class="sub" id="message">A shifting maze. One way out. Collect the light and keep moving.</p>
+      <button id="start">ENTER THE VAULT</button>
+    </div>
+  </div>
+</main>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.querySelector("#canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const overlay = document.querySelector("#overlay");
+  const startBtn = document.querySelector("#start");
+  const levelLabel = document.querySelector("#level");
+  const scoreLabel = document.querySelector("#score");
+  const headline = document.querySelector("#headline");
+  const message = document.querySelector("#message");
+
+  const COLS = 13, ROWS = 19;
+  let W=0,H=0,dpr=1, cell=0, ox=0, oy=0;
+  let grid=[], player={x:1,y:1,px:1,py:1,fromX:1,fromY:1,toX:1,toY:1,t:1};
+  let gems=[], particles=[], level=1, score=0, running=false, dead=false;
+  let last=0, moveClock=0, moveDelay=.105, shake=0, swipeStart=null;
+  const dirs = { ArrowUp:[0,-1],w:[0,-1],W:[0,-1], ArrowDown:[0,1],s:[0,1],S:[0,1],
+    ArrowLeft:[-1,0],a:[-1,0],A:[-1,0], ArrowRight:[1,0],d:[1,0],D:[1,0] };
+
+  function resize(){
+    const r=canvas.getBoundingClientRect(); dpr=Math.min(devicePixelRatio||1,2);
+    canvas.width=Math.floor(r.width*dpr); canvas.height=Math.floor(r.height*dpr);
+    W=r.width; H=r.height; ctx.setTransform(dpr,0,0,dpr,0,0);
+    cell=Math.min((W-40)/COLS,(H-170)/ROWS);
+    ox=(W-COLS*cell)/2; oy=(H-ROWS*cell)/2+12;
+  }
+  addEventListener("resize",resize); resize();
+
+  function generate(){
+    grid=Array.from({length:ROWS},()=>Array(COLS).fill(1));
+    // Randomized depth-first carve makes a connected, winding maze.
+    const stack=[[1,1]], seen=new Set(["1,1"]); grid[1][1]=0;
+    while(stack.length){
+      const [x,y]=stack[stack.length-1], options=[];
+      for(const [dx,dy] of [[2,0],[-2,0],[0,2],[0,-2]]){
+        const nx=x+dx,ny=y+dy,k=nx+","+ny;
+        if(nx>0&&nx<COLS-1&&ny>0&&ny<ROWS-1&&!seen.has(k)) options.push([nx,ny,dx,dy]);
+      }
+      if(!options.length){stack.pop();continue;}
+      const [nx,ny,dx,dy]=options[(Math.random()*options.length)|0];
+      grid[y+dy/2][x+dx/2]=0; grid[ny][nx]=0;
+      seen.add(nx+","+ny); stack.push([nx,ny]);
+    }
+    // Select a distant exit and place a few collectibles along the route.
+    const candidates=[];
+    for(let y=1;y<ROWS-1;y++) for(let x=1;x<COLS-1;x++)
+      if(!grid[y][x] && (x!==1||y!==1)) candidates.push([x,y]);
+    candidates.sort((a,b)=>dist(b)-dist(a));
+    const exit=candidates[0]; grid[exit[1]][exit[0]]=2;
+    gems=[];
+    const gemCount=Math.min(5,2+Math.floor(level/3));
+    for(let i=0;i<gemCount;i++){
+      const p=candidates[3+i*3]||candidates[candidates.length-1-i];
+      if(p&&grid[p[1]][p[0]]===0) gems.push({x:p[0],y:p[1],phase:Math.random()*6});
+    }
+    player={x:1,y:1,px:1,py:1,fromX:1,fromY:1,toX:1,toY:1,t:1};
+    moveDelay=Math.max(.075,.105-Math.min(level,20)*.0012);
+    levelLabel.textContent=String(level).padStart(2,"0");
+  }
+  function dist(p){return Math.abs(p[0]-1)+Math.abs(p[1]-1);}
+  function start(){
+    level=1;score=0;scoreLabel.textContent="000";particles=[];dead=false;
+    generate();running=true;overlay.classList.add("hidden");last=performance.now();
+  }
+  startBtn.addEventListener("click",start);
+  function move(dx,dy){
+    if(!running||player.t<1)return;
+    let nx=player.x+dx,ny=player.y+dy;
+    if(nx<0||ny<0||nx>=COLS||ny>=ROWS||grid[ny][nx]===1)return;
+    player.fromX=player.x;player.fromY=player.y;player.x=nx;player.y=ny;player.t=0;
+    if(grid[ny][nx]===2){
+      running=false; level++; headline.textContent="SECTOR CLEARED";
+      message.textContent="The vault shifts. A new maze is waiting.";
+      startBtn.textContent="CONTINUE"; overlay.classList.remove("hidden");
+      return;
+    }
+    const gi=gems.findIndex(g=>g.x===nx&&g.y===ny);
+    if(gi>=0){gems.splice(gi,1);score+=10;scoreLabel.textContent=String(score).padStart(3,"0");burst(nx,ny);}
+  }
+  function burst(x,y){
+    const cx=ox+(x+.5)*cell,cy=oy+(y+.5)*cell;
+    for(let i=0;i<12;i++){
+      const a=Math.random()*Math.PI*2,s=35+Math.random()*100;
+      particles.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.55,max:.55});
+    }
+  }
+  function frame(now){
+    const dt=Math.min((now-last)/1000,.04); last=now;
+    if(running){
+      moveClock+=dt;
+      if(moveClock>=moveDelay){moveClock=0; /* held keys are handled by key repeat */ }
+      player.t=Math.min(1,player.t+dt/.095);
+    }
+    for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;}
+    particles=particles.filter(p=>p.life>0);
+    draw(now/1000); requestAnimationFrame(frame);
+  }
+  function draw(time){
+    ctx.fillStyle="#090e1c";ctx.fillRect(0,0,W,H);
+    // Subtle ambient glow
+    let glow=ctx.createRadialGradient(W*.5,H*.48,10,W*.5,H*.48,Math.max(W,H)*.7);
+    glow.addColorStop(0,"#182344");glow.addColorStop(1,"#090e1c");
+    ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+    if(!cell)return;
+    const pad=cell*.08;
+    for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+      const X=ox+x*cell,Y=oy+y*cell;
+      if(grid[y][x]===1){
+        ctx.fillStyle="#151d36";ctx.fillRect(X+pad,Y+pad,cell-pad*2,cell-pad*2);
+        ctx.strokeStyle="#273252";ctx.lineWidth=1;ctx.strokeRect(X+pad+.5,Y+pad+.5,cell-pad*2-1,cell-pad*2-1);
+        ctx.fillStyle="#91a9ff0a";ctx.fillRect(X+pad+2,Y+pad+2,cell-pad*2-4,2);
+      } else if(grid[y][x]===2){
+        const pulse=.72+.28*Math.sin(time*4);
+        ctx.save();ctx.shadowColor="#ff5cbb";ctx.shadowBlur=16*pulse;
+        ctx.fillStyle=`rgba(255,92,187,${.7+.2*pulse})`;
+        ctx.beginPath();ctx.roundRect(X+cell*.22,Y+cell*.22,cell*.56,cell*.56,cell*.18);ctx.fill();
+        ctx.restore();
+        ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(X+cell/2,Y+cell/2,cell*.08,0,7);ctx.fill();
+      }
+    }
+    for(const g of gems){
+      const x=ox+(g.x+.5)*cell,y=oy+(g.y+.5)*cell+Math.sin(time*3+g.phase)*2,r=cell*.12;
+      ctx.save();ctx.shadowColor="#6df8ff";ctx.shadowBlur=12;
+      ctx.fillStyle="#a8fbff";ctx.beginPath();ctx.moveTo(x,y-r);ctx.lineTo(x+r,y);ctx.lineTo(x,y+r);ctx.lineTo(x-r,y);ctx.closePath();ctx.fill();ctx.restore();
+    }
+    for(const p of particles){
+      ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle="#83faff";
+      ctx.beginPath();ctx.arc(p.x,p.y,2.4,0,7);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    if(grid.length){
+      const ease=1-Math.pow(1-player.t,3);
+      const gx=player.fromX+(player.x-player.fromX)*ease;
+      const gy=player.fromY+(player.y-player.fromY)*ease;
+      const x=ox+(gx+.5)*cell,y=oy+(gy+.5)*cell,r=cell*.31;
+      ctx.save();ctx.shadowColor="#64f4ff";ctx.shadowBlur=20;
+      const grad=ctx.createRadialGradient(x-r*.25,y-r*.3,1,x,y,r);
+      grad.addColorStop(0,"#e7ffff");grad.addColorStop(.35,"#75f4ff");grad.addColorStop(1,"#2786c7");
+      ctx.fillStyle=grad;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+      ctx.fillStyle="#10233a";ctx.beginPath();ctx.arc(x,y,r*.15,0,7);ctx.fill();
+    }
+  }
+  addEventListener("keydown",e=>{
+    if(e.key===" "&&!running){start();return;}
+    const d=dirs[e.key];if(d){e.preventDefault();move(d[0],d[1]);}
+  },{passive:false});
+  canvas.addEventListener("pointerdown",e=>{swipeStart=[e.clientX,e.clientY];});
+  canvas.addEventListener("pointerup",e=>{
+    if(!swipeStart)return;
+    const dx=e.clientX-swipeStart[0],dy=e.clientY-swipeStart[1];swipeStart=null;
+    if(Math.hypot(dx,dy)<18)return;
+    if(Math.abs(dx)>Math.abs(dy))move(Math.sign(dx),0);else move(0,Math.sign(dy));
+  });
+  generate();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
