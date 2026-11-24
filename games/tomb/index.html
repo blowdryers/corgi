@@ -3,277 +3,531 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Mask of the Deep</title>
+<title>Neon Crypt</title>
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #05040a; }
   body {
-    display: grid; place-items: center; background: #100f12;
-    color: #f5e8cb; font: 14px/1.4 system-ui, sans-serif;
+    display: grid; place-items: center; color: #e9e6ff;
+    font: 14px/1.4 "Courier New", monospace; -webkit-user-select: none; user-select: none;
   }
   .game {
-    width: min(100vw, 500px); height: min(100dvh, 900px); min-height: 500px;
-    position: relative; overflow: hidden; background: #17171a;
-    border: 1px solid #655541; box-shadow: 0 20px 80px #000b;
+    width: min(100vw, 480px); height: min(100vh, 900px); height: min(100dvh, 900px);
+    position: relative; overflow: hidden; background: #07060d;
+    box-shadow: 0 0 0 2px #1a1630, 0 0 60px #2ef2c822;
   }
-  canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+  canvas { width: 100%; height: 100%; display: block; touch-action: none; image-rendering: pixelated; }
   .hud {
-    position: absolute; inset: 0 0 auto; z-index: 2; padding: 18px;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    pointer-events: none; text-shadow: 0 2px 5px #000;
+    position: absolute; inset: 0 0 auto; z-index: 2; padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    pointer-events: none; background: linear-gradient(#07060df0, #07060d00);
   }
-  .title { font-weight: 900; letter-spacing: .12em; font-size: 12px; }
-  .title span { color: #e6b95e; }
-  .stats { display: flex; gap: 8px; }
-  .stat {
-    padding: 7px 10px; min-width: 66px; text-align: center;
-    border: 1px solid #d2b26a55; background: #17130ed9;
-  }
-  .stat small { display: block; font-size: 9px; color: #c6ad81; letter-spacing: .12em; }
-  .stat b { font-size: 14px; }
-  .hint {
-    position: absolute; z-index: 2; bottom: 15px; left: 50%; transform: translateX(-50%);
-    color: #d7c7a8; background: #17130edb; border: 1px solid #d2b26a44;
-    padding: 8px 12px; font-size: 10px; letter-spacing: .1em;
-    white-space: nowrap; pointer-events: none;
-  }
+  .hud div { font-weight: 700; letter-spacing: 2px; font-size: 13px; }
+  .hud b { color: #2ef2c8; }
+  .hud .coins b { color: #ff4fa3; }
   .overlay {
     position: absolute; inset: 0; z-index: 3; display: grid; place-items: center;
-    padding: 22px; background: #080807bb; transition: opacity .2s;
+    padding: 24px; background: #05040ad9; transition: opacity .2s;
   }
   .overlay.off { opacity: 0; pointer-events: none; }
-  .card {
-    max-width: 330px; padding: 28px 26px; text-align: center;
-    background: #201b15; border: 2px solid #8b7040;
-    box-shadow: 0 0 0 5px #18140f, 0 20px 60px #000b;
+  .card { text-align: center; max-width: 320px; }
+  h1 {
+    margin: 0 0 6px; font-size: 34px; letter-spacing: 4px; color: #2ef2c8;
+    text-shadow: 0 0 12px #2ef2c8aa, 3px 3px 0 #6a3bff;
   }
-  .mask {
-    width: 66px; height: 66px; margin: 0 auto 14px; display: grid; place-items: center;
-    font-size: 34px; background: #332718; border: 2px solid #c29b4f;
-    color: #f0cb76; box-shadow: 0 0 22px #e3ad4c33;
-  }
-  h1 { margin: 0; font-size: 23px; letter-spacing: .1em; }
-  p { color: #c2b294; line-height: 1.6; margin: 10px 0 20px; }
+  .sub { color: #ff4fa3; letter-spacing: 3px; font-size: 12px; margin-bottom: 18px; }
+  p { color: #a9a3d6; line-height: 1.6; margin: 0 0 22px; font-size: 13px; }
+  .best { color: #e9e6ff; margin-bottom: 18px; letter-spacing: 2px; font-size: 12px; }
   button {
-    padding: 12px 20px; color: #19140b; background: #e3b95f; border: 0;
-    font: 900 11px system-ui; letter-spacing: .13em; cursor: pointer;
+    padding: 12px 26px; color: #07060d; background: #2ef2c8; border: 0;
+    font: 700 14px "Courier New", monospace; letter-spacing: 3px; cursor: pointer;
+    box-shadow: 4px 4px 0 #6a3bff;
   }
-  button:hover { background: #f1d183; }
+  button:hover { background: #8dfbe3; }
+  button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #6a3bff; }
 </style>
 </head>
 <body>
 <main class="game">
   <canvas id="c"></canvas>
   <div class="hud">
-    <div class="title">MASK <span>OF THE DEEP</span></div>
-    <div class="stats">
-      <div class="stat"><small>TEMPLE</small><b id="stage">01</b></div>
-      <div class="stat"><small>RELICS</small><b id="score">000</b></div>
-    </div>
+    <div>LVL <b id="stage">1</b></div>
+    <div>SCORE <b id="score">0</b></div>
+    <div class="coins">&#9670; <b id="coins">0</b></div>
   </div>
-  <div class="hint">SWIPE TO DASH • KEEP ABOVE THE RISING SAND</div>
   <div class="overlay" id="overlay">
     <div class="card">
-      <div class="mask">◉</div>
-      <h1 id="heading">THE DEEP TEMPLE</h1>
-      <p id="message">Dash through the ancient corridors. Your mask moves until it hits a wall. Don’t let the sand catch you.</p>
-      <button id="button">ENTER THE TEMPLE</button>
+      <h1 id="heading">NEON CRYPT</h1>
+      <div class="sub" id="sub">CLIMB OR DROWN</div>
+      <p id="message">Swipe or use arrow keys / WASD. You slide until you hit a wall. Grab the dots, dodge the spikes, reach the gate before the flood gets you.</p>
+      <div class="best" id="best"></div>
+      <button id="button">PLAY</button>
     </div>
   </div>
 </main>
 <script>
 (() => {
-  const canvas = document.querySelector("#c");
+  const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
-  const overlay = document.querySelector("#overlay");
-  const button = document.querySelector("#button");
-  const stageEl = document.querySelector("#stage");
-  const scoreEl = document.querySelector("#score");
-  const heading = document.querySelector("#heading");
-  const message = document.querySelector("#message");
+  const overlay = document.getElementById("overlay");
+  const button = document.getElementById("button");
+  const stageEl = document.getElementById("stage");
+  const scoreEl = document.getElementById("score");
+  const coinsEl = document.getElementById("coins");
+  const headingEl = document.getElementById("heading");
+  const subEl = document.getElementById("sub");
+  const messageEl = document.getElementById("message");
+  const bestEl = document.getElementById("best");
 
-  const C = 15, R = 35;
-  let w, h, dpr, cell, grid, dots, player, level=1, score=0, active=false;
-  let last=0, camera=0, sand=0, particles=[], move=null, swipe=null;
-  const dirs={ArrowUp:[0,-1],w:[0,-1],W:[0,-1],ArrowDown:[0,1],s:[0,1],S:[0,1],
-    ArrowLeft:[-1,0],a:[-1,0],A:[-1,0],ArrowRight:[1,0],d:[1,0],D:[1,0]};
+  const COLS = 15;
+  const SPEED = 32;
+  const PAL = {
+    bg: "#07060d", wall: "#100e1e", edge: "#2ef2c8", edgeDim: "#1a8f7a",
+    dot: "#c9b8ff", coin: "#ff4fa3", spike: "#ff3b5c", flood: "#6a3bff",
+    floodTop: "#b49bff", gate: "#ffe14f", body: "#ff9a3c", face: "#fff4e6"
+  };
+  const DIRS = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const KEYS = {
+    ArrowUp: 0, w: 0, W: 0, ArrowDown: 1, s: 1, S: 1,
+    ArrowLeft: 2, a: 2, A: 2, ArrowRight: 3, d: 3, D: 3
+  };
 
-  function resize(){
-    const r=canvas.getBoundingClientRect(); dpr=Math.min(devicePixelRatio||1,2);
-    canvas.width=r.width*dpr; canvas.height=r.height*dpr;
-    w=r.width; h=r.height; ctx.setTransform(dpr,0,0,dpr,0,0);
-    cell=Math.floor(Math.min((w-30)/C,(h-120)/13));
+  let w = 0, h = 0, cell = 16, dpr = 1;
+  let state = "menu", level = 1, score = 0, coins = 0, best = 0;
+  let L = null, player = null, queued = null, camera = 0, flood = 0, floodDelay = 0;
+  let particles = [], shake = 0, flash = 0, last = 0, swipe = null;
+
+  try { best = +localStorage.getItem("neoncrypt-best") || 0; } catch (e) {}
+
+  function rand(n) { return Math.floor(Math.random() * n); }
+
+  function slide(g, rows, x, y, dx, dy, exit) {
+    const path = [];
+    for (;;) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || nx >= COLS || ny < 0 || ny >= rows || g[ny][nx] === 1) break;
+      x = nx; y = ny; path.push(y * COLS + x);
+      if (exit !== undefined && y * COLS + x === exit) break;
+    }
+    return { x, y, path };
   }
-  addEventListener("resize",resize); resize();
 
-  function makeLevel(){
-    // Perfect maze, carved from odd-numbered cells.
-    grid=Array.from({length:R},()=>Array(C).fill(1));
-    const stack=[[1,R-2]], seen=new Set([`1,${R-2}`]); grid[R-2][1]=0;
-    while(stack.length){
-      const [x,y]=stack[stack.length-1], opts=[];
-      for(const [dx,dy] of [[2,0],[-2,0],[0,2],[0,-2]]){
-        const nx=x+dx,ny=y+dy,k=`${nx},${ny}`;
-        if(nx>0&&nx<C-1&&ny>0&&ny<R-1&&!seen.has(k))opts.push([nx,ny,dx,dy]);
+  function deadly(spikes, x, y) {
+    for (const [dx, dy] of DIRS) {
+      const s = spikes.get((y + dy) * COLS + (x + dx));
+      if (s && s[0] === -dx && s[1] === -dy) return true;
+    }
+    return false;
+  }
+
+  function search(g, rows, sx, sy, spikes, exit) {
+    const start = sy * COLS + sx;
+    const dist = new Map([[start, 0]]);
+    const traversed = new Set([start]);
+    const queue = [start];
+    while (queue.length) {
+      const k = queue.shift();
+      if (k === exit) continue;
+      const x = k % COLS, y = (k / COLS) | 0;
+      for (const [dx, dy] of DIRS) {
+        const r = slide(g, rows, x, y, dx, dy, exit);
+        if (!r.path.length) continue;
+        const nk = r.y * COLS + r.x;
+        if (nk !== exit && deadly(spikes, r.x, r.y)) continue;
+        for (const p of r.path) traversed.add(p);
+        if (!dist.has(nk)) { dist.set(nk, dist.get(k) + 1); queue.push(nk); }
       }
-      if(!opts.length){stack.pop();continue;}
-      const [nx,ny,dx,dy]=opts[(Math.random()*opts.length)|0];
-      grid[y+dy/2][x+dx/2]=0;grid[ny][nx]=0;seen.add(`${nx},${ny}`);stack.push([nx,ny]);
     }
-    // The exit is at the far end, so the route steadily climbs.
-    grid[1][C-2]=2;
-    // Ensure the upper exit connects into the maze.
-    grid[1][C-3]=0;grid[2][C-2]=0;
-    player={x:1,y:R-2,fromX:1,fromY:R-2,toX:1,toY:R-2,t:1};
-    dots=[];
-    for(let y=3;y<R-2;y+=2)for(let x=1;x<C-1;x+=2)
-      if(grid[y][x]===0&&Math.random()<.42)dots.push({x,y});
-    sand=0;camera=Math.max(0,player.y-10);
-    stageEl.textContent=String(level).padStart(2,"0");
+    return { dist, traversed };
   }
 
-  function begin(){
-    if(!active && level===1 && score===0){makeLevel();}
-    active=true;overlay.classList.add("off");last=performance.now();
-  }
-  button.onclick=begin;
-
-  function dash(dx,dy){
-    if(!active||move)return;
-    let x=player.x,y=player.y;
-    while(true){
-      const nx=x+dx,ny=y+dy;
-      if(nx<0||nx>=C||ny<0||ny>=R||grid[ny][nx]===1)break;
-      x=nx;y=ny;
-      if(grid[y][x]===2)break;
-    }
-    if(x===player.x&&y===player.y)return;
-    player.fromX=player.x;player.fromY=player.y;player.toX=x;player.toY=y;player.t=0;
-    move={dx,dy,duration:Math.max(.075,Math.min(.19,Math.abs(x-player.x+y-player.y)*.012))};
-    // Grab all relics crossed by the dash.
-    const steps=Math.max(Math.abs(x-player.x),Math.abs(y-player.y));
-    for(let i=1;i<=steps;i++){
-      const px=player.x+dx*i,py=player.y+dy*i;
-      const index=dots.findIndex(d=>d.x===px&&d.y===py);
-      if(index>=0){dots.splice(index,1);score+=1;scoreEl.textContent=String(score).padStart(3,"0");}
-    }
-  }
-
-  function end(won){
-    active=false;move=null;
-    if(won){
-      level++;heading.textContent="TEMPLE CLEARED";
-      message.textContent="The mask has found another buried passage. The next temple awaits.";
-      button.textContent="DESCEND";
-    }else{
-      heading.textContent="BURIED IN THE SANDS";
-      message.textContent="The dunes caught up. The temple remains—try another run.";
-      button.textContent="TRY AGAIN";level=1;score=0;scoreEl.textContent="000";
-    }
-    overlay.classList.remove("off");
-  }
-
-  function update(dt){
-    if(active){
-      sand=Math.min(R+4,sand+dt*(.25+level*.012));
-      if(move){
-        player.t=Math.min(1,player.t+dt/move.duration);
-        if(player.t>=1){
-          player.x=player.toX;player.y=player.toY;move=null;
-          if(grid[player.y][player.x]===2){end(true);return;}
+  function generate(lvl) {
+    const rows = 34 + Math.min(lvl, 12) * 4;
+    const minMoves = Math.min(6 + lvl, 18);
+    for (let attempt = 0; attempt < 400; attempt++) {
+      const g = Array.from({ length: rows }, (_, y) =>
+        Array.from({ length: COLS }, (_, x) => (x === 0 || x === COLS - 1 || y === 0 || y === rows - 1) ? 1 : 0));
+      const segs = Math.floor(rows * (1.5 + Math.random() * 0.5));
+      for (let i = 0; i < segs; i++) {
+        let x = 1 + rand(COLS - 2), y = 1 + rand(rows - 4);
+        const horiz = Math.random() < 0.55, len = 1 + rand(4);
+        for (let j = 0; j < len; j++) {
+          if (x > 0 && x < COLS - 1 && y > 0 && y < rows - 3) g[y][x] = 1;
+          if (horiz) x++; else y++;
         }
       }
-      const target=Math.max(0,player.y-9);
-      camera+=(target-camera)*Math.min(1,dt*7);
-      if(player.y>R-sand-1){end(false);}
+      const sy = rows - 2, sx = 1 + rand(COLS - 2);
+      g[sy][sx] = 0;
+      const open = search(g, rows, sx, sy, new Map());
+      let exit = -1, top = rows;
+      for (const k of open.dist.keys()) {
+        const y = (k / COLS) | 0;
+        if (y < top) { top = y; exit = k; }
+      }
+      if (top > 2 || open.dist.get(exit) < minMoves) continue;
+
+      const spikes = new Map();
+      const tries = Math.floor(rows * (0.25 + Math.min(lvl, 10) * 0.07));
+      const trav = [...open.traversed];
+      for (let i = 0; i < tries; i++) {
+        const k = trav[rand(trav.length)];
+        if (k === exit || k === sy * COLS + sx) continue;
+        const x = k % COLS, y = (k / COLS) | 0;
+        const [dx, dy] = DIRS[rand(4)];
+        const wx = x + dx, wy = y + dy;
+        if (wy <= 0 || wy >= rows - 1 || wx <= 0 || wx >= COLS - 1) continue;
+        if (g[wy][wx] !== 1 || spikes.has(wy * COLS + wx)) continue;
+        spikes.set(wy * COLS + wx, [-dx, -dy]);
+        if (deadly(spikes, sx, sy) || !search(g, rows, sx, sy, spikes, exit).dist.has(exit)) spikes.delete(wy * COLS + wx);
+      }
+
+      const final = search(g, rows, sx, sy, spikes, exit);
+      if (!final.dist.has(exit)) continue;
+      for (let y = 1; y < rows - 1; y++)
+        for (let x = 1; x < COLS - 1; x++)
+          if (g[y][x] === 0 && !final.traversed.has(y * COLS + x)) g[y][x] = 1;
+
+      const items = new Map();
+      for (const k of final.traversed) {
+        if (k === exit || k === sy * COLS + sx) continue;
+        items.set(k, final.dist.has(k) && Math.random() < 0.18 ? 2 : 1);
+      }
+      return { g, rows, sx, sy, exit, ex: exit % COLS, ey: (exit / COLS) | 0, spikes, items };
     }
-    particles=particles.filter(p=>(p.life-=dt)>0);
-    for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;}
+    return null;
   }
 
-  function draw(now){
-    ctx.fillStyle="#171719";ctx.fillRect(0,0,w,h);
-    // Warm torchlight ambience.
-    const bg=ctx.createRadialGradient(w*.5,h*.48,10,w*.5,h*.48,h*.72);
-    bg.addColorStop(0,"#3a3021");bg.addColorStop(1,"#171719");
-    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-    if(!grid||!cell)return;
-    const left=(w-C*cell)/2, top=(h-12*cell)/2+6;
-    // Draw visible maze rows only.
-    const start=Math.max(0,Math.floor(camera)-2), end=Math.min(R,Math.ceil(camera+h/cell)+2);
-    for(let y=start;y<end;y++)for(let x=0;x<C;x++){
-      const sx=left+x*cell, sy=top+(y-camera)*cell;
-      if(grid[y][x]===1){
-        ctx.fillStyle="#514332";ctx.fillRect(sx,sy,cell,cell);
-        ctx.fillStyle="#68553a";ctx.fillRect(sx+1,sy+1,cell-2,Math.max(2,cell*.12));
-        ctx.strokeStyle="#322b23";ctx.lineWidth=1;ctx.strokeRect(sx+.5,sy+.5,cell-1,cell-1);
-        // Small chipped-stone marks.
-        ctx.fillStyle="#302b24";ctx.fillRect(sx+cell*.25,sy+cell*.48,cell*.16,1.5);
-      }else{
-        ctx.fillStyle="#211e1a";ctx.fillRect(sx,sy,cell,cell);
-        ctx.fillStyle="#29251f";ctx.fillRect(sx+2,sy+2,cell-4,1);
+  function newLevel() {
+    L = null;
+    while (!L) L = generate(level);
+    player = { x: L.sx, y: L.sy, px: L.sx, py: L.sy, dx: 0, dy: 0, tx: L.sx, ty: L.sy, moving: false, squash: 0, face: 1 };
+    queued = null;
+    camera = player.y - visibleRows() * 0.62;
+    flood = L.rows + 3;
+    floodDelay = 1.6;
+    particles = [];
+    updateHud();
+  }
+
+  function visibleRows() { return h / cell; }
+
+  function updateHud() {
+    stageEl.textContent = level;
+    scoreEl.textContent = score;
+    coinsEl.textContent = coins;
+  }
+
+  function showOverlay(title, sub, msg, btn) {
+    headingEl.textContent = title;
+    subEl.textContent = sub;
+    messageEl.textContent = msg;
+    button.textContent = btn;
+    bestEl.textContent = best ? "BEST " + best : "";
+    overlay.classList.remove("off");
+    button.focus();
+  }
+
+  function start() {
+    if (state === "playing") return;
+    if (state === "menu" || state === "dead") { level = 1; score = 0; coins = 0; }
+    newLevel();
+    state = "playing";
+    overlay.classList.add("off");
+  }
+
+  function die() {
+    if (state !== "playing") return;
+    state = "dead";
+    shake = 0.4; flash = 1;
+    burst(player.px, player.py, PAL.body, 30);
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem("neoncrypt-best", best); } catch (e) {}
+    }
+    setTimeout(() => showOverlay("GAME OVER", "LEVEL " + level, "Score " + score + ". The crypt keeps you this time.", "RETRY"), 650);
+  }
+
+  function win() {
+    state = "cleared";
+    score += 50 + level * 10;
+    updateHud();
+    burst(player.px, player.py, PAL.gate, 40);
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem("neoncrypt-best", best); } catch (e) {}
+    }
+    level++;
+    setTimeout(() => showOverlay("CLEARED", "LEVEL " + (level - 1) + " DONE", "Score " + score + ". The next floor is deeper and the flood is faster.", "NEXT"), 500);
+  }
+
+  function tryMove(d) {
+    if (state !== "playing") return;
+    if (player.moving) { queued = d; return; }
+    const [dx, dy] = DIRS[d];
+    const r = slide(L.g, L.rows, player.x, player.y, dx, dy, L.exit);
+    if (!r.path.length) return;
+    player.dx = dx; player.dy = dy; player.tx = r.x; player.ty = r.y; player.moving = true;
+    if (dx) player.face = dx;
+  }
+
+  function collect(x, y) {
+    const k = y * COLS + x;
+    const it = L.items.get(k);
+    if (!it) return;
+    L.items.delete(k);
+    if (it === 2) { coins++; score += 5; burst(x, y, PAL.coin, 8); }
+    else { score += 1; }
+    updateHud();
+  }
+
+  function arrive() {
+    player.moving = false;
+    player.px = player.x = player.tx;
+    player.py = player.y = player.ty;
+    player.squash = 1;
+    shake = Math.max(shake, 0.08);
+    burst(player.x + player.dx * 0.45, player.y + player.dy * 0.45, PAL.edge, 6);
+    if (player.y * COLS + player.x === L.exit) { win(); return; }
+    if (deadly(L.spikes, player.x, player.y)) { die(); return; }
+    if (queued !== null) { const q = queued; queued = null; tryMove(q); }
+  }
+
+  function burst(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 7;
+      particles.push({ x: x + 0.5, y: y + 0.5, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.3 + Math.random() * 0.4, color });
+    }
+  }
+
+  function update(dt) {
+    if (state === "playing") {
+      if (player.moving) {
+        let step = SPEED * dt;
+        while (step > 0 && player.moving) {
+          const remain = Math.abs(player.tx - player.px) + Math.abs(player.ty - player.py);
+          const s = Math.min(step, remain);
+          player.px += player.dx * s; player.py += player.dy * s; step -= s;
+          const cx = Math.round(player.px), cy = Math.round(player.py);
+          if (cx !== player.x || cy !== player.y) {
+            player.x = cx; player.y = cy;
+            collect(cx, cy);
+          }
+          if (s >= remain) arrive();
+        }
+        if (Math.random() < 0.7) particles.push({ x: player.px + 0.5, y: player.py + 0.5, vx: 0, vy: 0, life: 0.18, color: PAL.body });
       }
-      if(grid[y][x]===2){
-        const pulse=.7+.3*Math.sin(now*4);
-        ctx.fillStyle=`rgba(237,187,83,${pulse})`;
-        ctx.fillRect(sx+cell*.2,sy+cell*.2,cell*.6,cell*.6);
-        ctx.fillStyle="#fff0ae";ctx.fillRect(sx+cell*.38,sy+cell*.38,cell*.24,cell*.24);
+      if (state === "playing") {
+        if (floodDelay > 0) floodDelay -= dt;
+        else flood -= dt * (0.85 + Math.min(level, 15) * 0.09);
+        flood = Math.min(flood, player.py + visibleRows() * 0.42);
+        if (player.py + 0.6 > flood) die();
       }
     }
-    for(const d of dots){
-      const sy=top+(d.y-camera+.5)*cell;
-      if(sy<0||sy>h)continue;
-      const x=left+(d.x+.5)*cell,r=Math.max(2,cell*.075);
-      ctx.fillStyle="#f3c65e";ctx.fillRect(x-r,sy-r,r*2,r*2);
-      ctx.fillStyle="#fff0aa";ctx.fillRect(x-r/2,sy-r/2,r,r);
+    if (player) {
+      const target = player.py - visibleRows() * 0.62;
+      camera += (target - camera) * Math.min(1, dt * 8);
+      player.squash = Math.max(0, player.squash - dt * 6);
     }
-    // Rising sand wall, anchored to the bottom of the maze.
-    const sandY=top+(R-sand-camera)*cell;
-    if(sandY<h){
-      const y=Math.max(0,sandY);
-      const grad=ctx.createLinearGradient(0,y,0,h);
-      grad.addColorStop(0,"#d59b43cc");grad.addColorStop(1,"#87562dcc");
-      ctx.fillStyle=grad;ctx.fillRect(0,y,w,h-y);
-      ctx.fillStyle="#f2c36b";ctx.fillRect(0,y,w,3);
-      for(let i=0;i<16;i++){
-        const sx=(i*67+now*13)%w;
-        ctx.fillStyle="#f3cf83aa";ctx.fillRect(sx,y+8+(i*19)%Math.max(12,h-y),2,2);
+    shake = Math.max(0, shake - dt);
+    flash = Math.max(0, flash - dt * 2.5);
+    particles = particles.filter(p => (p.life -= dt) > 0);
+    for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9; }
+  }
+
+  function isWall(x, y) {
+    return x < 0 || x >= COLS || y < 0 || y >= L.rows || L.g[y][x] === 1;
+  }
+
+  function drawSpike(sx, sy, dir) {
+    const c = cell, n = 3, [dx, dy] = dir;
+    ctx.fillStyle = PAL.spike;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = (i + 0.5) / n, half = 0.5 / n;
+      if (dy) {
+        const base = dy > 0 ? sy + c : sy, tip = dy > 0 ? sy + c + c * 0.38 : sy - c * 0.38;
+        ctx.moveTo(sx + (a - half) * c, base); ctx.lineTo(sx + a * c, tip); ctx.lineTo(sx + (a + half) * c, base);
+      } else {
+        const base = dx > 0 ? sx + c : sx, tip = dx > 0 ? sx + c + c * 0.38 : sx - c * 0.38;
+        ctx.moveTo(base, sy + (a - half) * c); ctx.lineTo(tip, sy + a * c); ctx.lineTo(base, sy + (a + half) * c);
       }
     }
-    if(player){
-      let px=player.x,py=player.y;
-      if(move){const t=1-Math.pow(1-player.t,3);px=player.fromX+(player.toX-player.fromX)*t;py=player.fromY+(player.toY-player.fromY)*t;}
-      const x=left+(px+.5)*cell,y=top+(py-camera+.5)*cell,r=cell*.36;
-      ctx.save();ctx.shadowColor="#ffd15d";ctx.shadowBlur=13;
-      ctx.fillStyle="#d9a844";ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#f7db88";ctx.beginPath();ctx.arc(x,y,r*.7,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#40311b";
-      ctx.fillRect(x-r*.44,y-r*.18,r*.2,r*.27);ctx.fillRect(x+r*.24,y-r*.18,r*.2,r*.27);
-      ctx.fillRect(x-r*.23,y+r*.27,r*.46,r*.09);
+    ctx.fill();
+  }
+
+  function drawPlayer(t) {
+    const x = (player.px + 0.5) * cell, y = (player.py - camera + 0.5) * cell;
+    const s = cell * 0.82, sq = player.squash * 0.25;
+    const sxs = player.moving ? (player.dx ? 1.15 : 0.88) : 1 + (player.dy ? sq : -sq);
+    const sys = player.moving ? (player.dy ? 1.15 : 0.88) : 1 + (player.dx ? sq : -sq);
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y));
+    ctx.scale(sxs * player.face, sys);
+    const u = s / 8;
+    const px = (cx, cy, cw, ch, col) => { ctx.fillStyle = col; ctx.fillRect(-s / 2 + cx * u, -s / 2 + cy * u, cw * u, ch * u); };
+    ctx.shadowColor = PAL.body; ctx.shadowBlur = cell * 0.5;
+    px(0, 0, 2, 3, PAL.body); px(6, 0, 2, 3, PAL.body);
+    px(0, 2, 8, 5, PAL.body);
+    ctx.shadowBlur = 0;
+    px(1, 1, 1, 1, "#ffcf9c"); px(6, 1, 1, 1, "#ffcf9c");
+    px(2, 4, 4, 4, PAL.face); px(1, 6, 6, 2, PAL.face);
+    const blink = Math.sin(t * 2.3) > 0.97;
+    px(2, 3, 1, blink ? 0.4 : 1, "#07060d"); px(5, 3, 1, blink ? 0.4 : 1, "#07060d");
+    px(3.5, 5, 1, 1, "#07060d");
+    ctx.restore();
+  }
+
+  function draw(t) {
+    ctx.fillStyle = PAL.bg;
+    ctx.fillRect(0, 0, w, h);
+    if (!L) return;
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - 0.5) * shake * 20, (Math.random() - 0.5) * shake * 20);
+    const offX = (w - COLS * cell) / 2;
+    ctx.translate(Math.round(offX), 0);
+    const y0 = Math.max(0, Math.floor(camera) - 1), y1 = Math.min(L.rows, Math.ceil(camera + h / cell) + 1);
+    const ly = y => Math.round((y - camera) * cell);
+    const lw = Math.max(2, Math.round(cell / 8));
+
+    for (let y = y0; y < y1; y++) {
+      for (let x = 0; x < COLS; x++) {
+        if (!isWall(x, y)) continue;
+        const sx = x * cell, sy = ly(y);
+        ctx.fillStyle = PAL.wall;
+        ctx.fillRect(sx, sy, cell, cell);
+        if ((x * 7 + y * 13) % 5 === 0) { ctx.fillStyle = "#17142b"; ctx.fillRect(sx + cell * 0.3, sy + cell * 0.3, cell * 0.2, cell * 0.2); }
+      }
+    }
+    ctx.save();
+    ctx.shadowColor = PAL.edge; ctx.shadowBlur = cell * 0.4;
+    ctx.fillStyle = PAL.edge;
+    for (let y = y0; y < y1; y++) {
+      for (let x = 0; x < COLS; x++) {
+        if (!isWall(x, y)) continue;
+        const sx = x * cell, sy = ly(y);
+        if (y > 0 && !isWall(x, y - 1)) ctx.fillRect(sx, sy, cell, lw);
+        if (y < L.rows - 1 && !isWall(x, y + 1)) ctx.fillRect(sx, sy + cell - lw, cell, lw);
+        if (x > 0 && !isWall(x - 1, y)) ctx.fillRect(sx, sy, lw, cell);
+        if (x < COLS - 1 && !isWall(x + 1, y)) ctx.fillRect(sx + cell - lw, sy, lw, cell);
+      }
+    }
+    ctx.restore();
+
+    for (const [k, dir] of L.spikes) {
+      const x = k % COLS, y = (k / COLS) | 0;
+      if (y < y0 || y >= y1) continue;
+      drawSpike(x * cell, ly(y), dir);
+    }
+
+    for (const [k, it] of L.items) {
+      const x = k % COLS, y = (k / COLS) | 0;
+      if (y < y0 || y >= y1) continue;
+      const cx = x * cell + cell / 2, cy = ly(y) + cell / 2;
+      if (it === 1) {
+        const r = Math.max(1, Math.round(cell * 0.09));
+        ctx.fillStyle = PAL.dot;
+        ctx.fillRect(Math.round(cx - r), Math.round(cy - r), r * 2, r * 2);
+      } else {
+        const r = cell * (0.26 + Math.sin(t * 5 + k) * 0.04);
+        ctx.save();
+        ctx.shadowColor = PAL.coin; ctx.shadowBlur = cell * 0.5;
+        ctx.fillStyle = PAL.coin;
+        ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.75, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * 0.75, cy); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    if (L.ey >= y0 && L.ey < y1) {
+      const gx = L.ex * cell, gy = ly(L.ey), p = 0.6 + 0.4 * Math.sin(t * 6);
+      ctx.save();
+      ctx.shadowColor = PAL.gate; ctx.shadowBlur = cell * p;
+      ctx.strokeStyle = PAL.gate; ctx.lineWidth = lw;
+      ctx.strokeRect(gx + cell * 0.12, gy + cell * 0.12, cell * 0.76, cell * 0.76);
+      ctx.globalAlpha = p;
+      ctx.fillStyle = PAL.gate;
+      ctx.fillRect(gx + cell * 0.34, gy + cell * 0.34, cell * 0.32, cell * 0.32);
       ctx.restore();
     }
+
+    for (const p of particles) {
+      ctx.globalAlpha = Math.min(1, p.life * 3);
+      ctx.fillStyle = p.color;
+      const s = Math.max(2, cell * 0.14);
+      ctx.fillRect(p.x * cell - s / 2, (p.y - camera) * cell - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+
+    if (state !== "dead" || flash > 0.5) drawPlayer(t);
+
+    const fy = ly(flood);
+    if (fy < h) {
+      const top = Math.max(-cell, fy);
+      ctx.fillStyle = PAL.flood;
+      ctx.globalAlpha = 0.82;
+      ctx.beginPath();
+      ctx.moveTo(-offX, h);
+      for (let x = -offX; x <= w; x += 6) ctx.lineTo(x, top + Math.sin(x * 0.05 + t * 4) * cell * 0.15);
+      ctx.lineTo(w, h);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = PAL.floodTop;
+      for (let x = -offX; x <= w; x += 6) ctx.fillRect(x, top + Math.sin(x * 0.05 + t * 4) * cell * 0.15 - 1, 6, 2);
+    }
+    ctx.restore();
+
+    if (flash > 0) {
+      ctx.fillStyle = "rgba(255,59,92," + flash * 0.35 + ")";
+      ctx.fillRect(0, 0, w, h);
+    }
   }
 
-  function loop(t){
-    const dt=Math.min((t-last)/1000,.04);last=t;update(dt);draw(t/1000);requestAnimationFrame(loop);
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.width = Math.round(r.width * dpr);
+    canvas.height = Math.round(r.height * dpr);
+    w = r.width; h = r.height;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    cell = Math.floor(w / COLS);
   }
-  addEventListener("keydown",e=>{
-    if(dirs[e.key]){e.preventDefault();dash(...dirs[e.key]);}
-    if(e.key===" "&&!active)begin();
-  },{passive:false});
-  canvas.addEventListener("pointerdown",e=>{swipe=[e.clientX,e.clientY];});
-  canvas.addEventListener("pointerup",e=>{
-    if(!swipe)return;const dx=e.clientX-swipe[0],dy=e.clientY-swipe[1];swipe=null;
-    if(Math.hypot(dx,dy)<16)return;
-    if(Math.abs(dx)>Math.abs(dy))dash(Math.sign(dx),0);else dash(0,Math.sign(dy));
+
+  function loop(now) {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    update(dt);
+    draw(now / 1000);
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener("resize", resize);
+  document.addEventListener("visibilitychange", () => { last = performance.now(); });
+  window.addEventListener("keydown", e => {
+    if (e.key in KEYS) { e.preventDefault(); tryMove(KEYS[e.key]); return; }
+    if ((e.key === " " || e.key === "Enter") && state !== "playing") { e.preventDefault(); start(); }
   });
-  makeLevel();
-  // Start screen's first button starts the already generated maze; subsequent clears generate a fresh one.
-  button.addEventListener("click",()=>{
-    if(heading.textContent==="TEMPLE CLEARED"){makeLevel();active=true;}
-    else if(heading.textContent==="BURIED IN THE SANDS"){makeLevel();active=true;}
+  button.addEventListener("click", e => { e.stopPropagation(); start(); });
+
+  canvas.addEventListener("pointerdown", e => {
+    swipe = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
   });
-  requestAnimationFrame(loop);
+  canvas.addEventListener("pointermove", e => {
+    if (!swipe || swipe.id !== e.pointerId) return;
+    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+    if (Math.hypot(dx, dy) < 22) return;
+    if (Math.abs(dx) > Math.abs(dy)) tryMove(dx > 0 ? 3 : 2); else tryMove(dy > 0 ? 1 : 0);
+    swipe.x = e.clientX; swipe.y = e.clientY;
+  });
+  const endSwipe = () => { swipe = null; };
+  canvas.addEventListener("pointerup", endSwipe);
+  canvas.addEventListener("pointercancel", endSwipe);
+
+  resize();
+  level = 1;
+  newLevel();
+  showOverlay("NEON CRYPT", "CLIMB OR DROWN", messageEl.textContent, "PLAY");
+  requestAnimationFrame(t => { last = t; loop(t); });
 })();
 </script>
 </body>
