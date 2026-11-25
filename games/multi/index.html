@@ -20,6 +20,14 @@ h1{text-align:center;font-size:44px;letter-spacing:1px}
 .card i{display:block;height:6px;border-radius:3px;margin-bottom:14px}
 .card b{display:block;font-size:20px;margin-bottom:6px}
 .card span{color:var(--mut);font-size:14px;line-height:1.45}
+.card em{float:right;font-style:normal;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);border:1px solid var(--line);border-radius:20px;padding:2px 8px;margin-top:-4px}
+.bar{max-width:1000px;margin:0 auto 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{background:var(--card);color:var(--mut);border:1px solid var(--line);border-radius:20px;padding:7px 14px;font:600 13px system-ui,sans-serif;cursor:pointer}
+.tabs button.on,.tabs button:hover{color:var(--fg);border-color:var(--acc)}
+#q{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:20px;padding:8px 14px;font:14px system-ui,sans-serif;min-width:200px;flex:0 1 260px;outline:none}
+#q:focus{border-color:var(--acc)}
+.empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:40px}
 #game{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#000}
 canvas{width:min(100vw,160vh);height:min(100vh,62.5vw);display:block;touch-action:none}
 #back{position:fixed;top:10px;left:10px;z-index:5;background:rgba(20,24,32,.85);color:#fff;border:1px solid #333a4a;border-radius:8px;padding:8px 14px;font:600 14px system-ui,sans-serif;cursor:pointer}
@@ -94,7 +102,8 @@ canvas{width:min(100vw,160vh);height:min(100vh,62.5vw);display:block;touch-actio
 <body>
 <div id="menu">
 <h1>Arcade Box</h1>
-<p class="sub">pick a game. esc or the back button returns here</p>
+<p class="sub" id="sub">pick a game. esc or the back button returns here</p>
+<div class="bar"><div class="tabs" id="tabs"></div><input id="q" type="search" placeholder="search" autocomplete="off"></div>
 <div class="grid" id="cards"></div>
 </div>
 <div id="game"><button id="back">Back</button><canvas id="c" width="960" height="600"></canvas>
@@ -1207,17 +1216,32 @@ const FPS={
 
 const Blacksite={start(){location.href='blacksite.html'},update(){},draw(){}};
 const GAMES=[
-  [Blacksite,'Blacksite','6v6 team deathmatch on a dockyard. loadouts, killstreaks, full post processing','#f2b84b'],
-  [FPS,'Bot Arena','full 3d free for all shooter vs 9 bots. pick a class, double jump, sniper one shots','#ef4444'],
-  [Blocks,'Blocks','stack falling pieces and clear lines','#38bdf8'],
-  [Snake,'Snake','eat, grow, dont crash','#4ade80'],
-  [Breakout,'Breakout','smash every brick with the ball','#f472b6'],
-  [Flappy,'Flappy','tap to fly through the gaps','#facc15'],
-  [T2048,'2048','slide and merge tiles to hit 2048','#f59563'],
-  [Pong,'Pong','first to 7 against the cpu','#5eead4']
+  [Blacksite,'Blacksite','6v6 team deathmatch on a dockyard. loadouts, killstreaks, full post processing','#f2b84b','shooter'],
+  [FPS,'Bot Arena','full 3d free for all shooter vs 9 bots. pick a class, double jump, sniper one shots','#ef4444','shooter'],
+  [Blocks,'Blocks','stack falling pieces and clear lines','#38bdf8','puzzle'],
+  [Snake,'Snake','eat, grow, dont crash','#4ade80','arcade'],
+  [Breakout,'Breakout','smash every brick with the ball','#f472b6','arcade'],
+  [Flappy,'Flappy','tap to fly through the gaps','#facc15','mobile'],
+  [T2048,'2048','slide and merge tiles to hit 2048','#f59563','puzzle'],
+  [Pong,'Pong','first to 7 against the cpu','#5eead4','arcade']
 ];
-const cardsEl=document.getElementById('cards');
-GAMES.forEach(([g,n,d,c])=>{const b=document.createElement('button');b.className='card';b.innerHTML='<i style="background:'+c+'"></i><b>'+n+'</b><span>'+d+'</span>';b.onclick=()=>launch(g);cardsEl.appendChild(b)});
+function addGame(g,n,d,c,cat){GAMES.push([g,n,d,c,cat])}
+const CATS=['all','arcade','mobile','shooter','adventure','puzzle','quiz','word'];
+const cardsEl=document.getElementById('cards'),tabsEl=document.getElementById('tabs'),qEl=document.getElementById('q');
+let catSel='all';
+try{catSel=localStorage.getItem('arcade_cat')||'all'}catch(e){}
+function renderCards(){
+  const q=qEl.value.trim().toLowerCase();
+  tabsEl.innerHTML=CATS.map(c=>'<button data-c="'+c+'" class="'+(c===catSel?'on':'')+'">'+c+'</button>').join('');
+  cardsEl.innerHTML='';
+  const list=GAMES.filter(([g,n,d,c,cat])=>(catSel==='all'||cat===catSel)&&(!q||(n+' '+d+' '+cat).toLowerCase().includes(q)));
+  list.forEach(([g,n,d,c,cat])=>{const b=document.createElement('button');b.className='card';b.innerHTML='<i style="background:'+c+'"></i><em>'+cat+'</em><b>'+n+'</b><span>'+d+'</span>';b.onclick=()=>launch(g);cardsEl.appendChild(b)});
+  if(!list.length)cardsEl.innerHTML='<div class="empty">nothing matches that</div>';
+  document.getElementById('sub').textContent=GAMES.length+' games. esc or the back button returns here';
+}
+tabsEl.onclick=e=>{const c=e.target.dataset.c;if(!c)return;catSel=c;try{localStorage.setItem('arcade_cat',c)}catch(e){}renderCards()};
+qEl.oninput=renderCards;
+addEventListener('DOMContentLoaded',renderCards);
 
 function launch(g){audio();for(const k in keys)keys[k]=false;document.getElementById('menu').style.display='none';document.getElementById('game').style.display='flex';cur=g;g.start();mouse.moved=false;cv.focus()}
 function exit(){if(cur&&cur.stop)cur.stop();cur=null;if(document.pointerLockElement)document.exitPointerLock();document.getElementById('game').style.display='none';document.getElementById('menu').style.display='block'}
@@ -1226,8 +1250,8 @@ document.getElementById('back').onclick=e=>{e.stopPropagation();exit()};
 const BLOCK=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Backspace'];
 addEventListener('keydown',e=>{
   if(!cur||e.target.tagName==='INPUT')return;
-  if(BLOCK.includes(e.code)||e.code==='Tab'&&cur===FPS)e.preventDefault();
-  if((e.code==='Escape'||e.code==='Backspace')&&!cur.noEsc){exit();return}
+  if(BLOCK.includes(e.code)||e.code==='Tab')e.preventDefault();
+  if((e.code==='Escape'||e.code==='Backspace'&&!cur.typing)&&!cur.noEsc){exit();return}
   keys[e.code]=true;
   if(cur.key)cur.key(e.code,e.repeat);
 });
@@ -1245,6 +1269,13 @@ let last=performance.now();
 function frame(t){const dt=Math.min(.05,(t-last)/1000);last=t;if(cur){cur.update(dt);if(cur)cur.draw()}requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 </script>
+<script src="pack/kit.js"></script>
+<script src="pack/arcade.js"></script>
+<script src="pack/mobile.js"></script>
+<script src="pack/shooter.js"></script>
+<script src="pack/adventure.js"></script>
+<script src="pack/puzzle.js"></script>
+<script src="pack/quiz.js"></script>
+<script src="pack/words.js"></script>
 </body>
-</html>
 </html>
